@@ -96,14 +96,22 @@ textarea{min-height:90px;resize:vertical}
 </main>
 <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
 <script>
-/* Cấu hình triển khai: điền địa chỉ máy chủ AI (xem README.md). Để trống = tắt các chức năng AI. */
-window.BLINGO_CONFIG=window.BLINGO_CONFIG||{aiEndpoint:""};
-/* Lớp tương thích: app gọi claude.use("downloads") và claude.use("sample"). Ngoài môi trường Claude, hai chức năng này được thay như sau. */
+/* Cấu hình triển khai (xem README.md). aiEndpoint = địa chỉ máy chủ AI riêng (tùy chọn). model = mô hình Gemini. */
+window.BLINGO_CONFIG=window.BLINGO_CONFIG||{aiEndpoint:"",model:"gemini-flash-latest"};
+window.BLINGO_STANDALONE=true;
+/* Lớp tương thích: app gọi claude.use("downloads") và claude.use("sample"). Ngoài môi trường Claude: tải file bằng trình duyệt; AI qua máy chủ riêng hoặc khóa Gemini của từng giáo viên. */
 (function(){if(window.claude)return;var C=window.BLINGO_CONFIG||{};
+function key(){try{return localStorage.getItem("blingo_ai_key")||""}catch(e){return ""}}
+function bad(st){if(st===429)throw{code:"rate_limited"};if(st===400||st===401||st===403)throw{code:"not_granted"};throw{code:"error"}}
+async function viaEndpoint(prompt){var r;try{r=await fetch(C.aiEndpoint,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt:prompt})})}catch(e){throw{code:"network"}}
+ if(!r.ok)bad(r.status);var j=await r.json();return{text:String(j.text||""),truncated:!!j.truncated}}
+async function viaGemini(prompt){var k=key();if(!k)throw{code:"not_granted"};var r;
+ try{r=await fetch("https://generativelanguage.googleapis.com/v1beta/models/"+(C.model||"gemini-flash-latest")+":generateContent",{method:"POST",headers:{"Content-Type":"application/json","x-goog-api-key":k},body:JSON.stringify({contents:[{role:"user",parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:24000,temperature:0.7}})})}catch(e){throw{code:"network"}}
+ if(!r.ok)bad(r.status);var j=await r.json(),c=j.candidates&&j.candidates[0];if(!c||!c.content)throw{code:"error"};
+ return{text:(c.content.parts||[]).map(function(p){return p.text||""}).join(""),truncated:c.finishReason==="MAX_TOKENS"}}
 window.claude={use:async function(n){
  if(n==="downloads")return{save:async function(o){var d=o.data,b=new Blob([typeof d==="string"?d:(d instanceof Uint8Array?d:new Uint8Array(d))],{type:o.type||"application/octet-stream"});var a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=o.filename||"file";document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},1500)}};
- if(n==="sample"&&C.aiEndpoint)return async function(prompt,opt){var r;try{r=await fetch(C.aiEndpoint,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt:prompt})})}catch(e){throw{code:"network"}}
-  if(r.status===429)throw{code:"rate_limited"};if(r.status===401||r.status===403)throw{code:"not_granted"};if(!r.ok)throw{code:"error"};var j=await r.json();return{text:String(j.text||""),truncated:!!j.truncated}};
+ if(n==="sample"){if(C.aiEndpoint)return function(p){return viaEndpoint(p)};if(key())return function(p){return viaGemini(p)}}
  return null}}})();
 </script>
 <script>
@@ -170,6 +178,7 @@ function acctV(){
  return `<div class="auth" data-act="acx"><div class="card authc" data-act="acin"><div class="row sb"><b>Tài khoản</b><button class="btn o s" data-act="acx">Đóng</button></div>
  <p class="small mute">${esc(ME.name)} · ${esc(msk(ME))}</p>
  ${AUE?`<div class="aerr" role="alert">${esc(AUE)}</div>`:""}${AUOK?`<div class="aok" role="status">${esc(AUOK)}</div>`:""}
+ ${aiKeyUI()}
  <label class="small mute">Mật khẩu hiện tại</label><input id="pw_o" type="password" autocomplete="current-password">
  <label class="small mute">Mật khẩu mới</label><input id="pw_n" type="password" autocomplete="new-password">
  <label class="small mute">Nhập lại mật khẩu mới</label><input id="pw_n2" type="password" autocomplete="new-password">
@@ -372,7 +381,15 @@ const PARTN={"1":"Part 1 – Hỏi đáp quen thuộc","2":"Part 2 – Nói dài
 const mmss=s=>Math.floor(s/60)+":"+String(Math.floor(s%60)).padStart(2,"0");
 const wc=t=>(String(t||"").match(/[A-Za-z0-9'’-]+/g)||[]).length;
 const pj=t=>{const a=t.indexOf("{"),b=t.lastIndexOf("}");if(a<0||b<a)throw 0;return JSON.parse(t.slice(a,b+1))};
-const aiErr=x=>x&&x.code=="not_granted"?"Bạn chưa cho phép trang gọi Claude.":x&&x.code=="rate_limited"?"Đang quá giới hạn, hãy thử lại sau ít phút.":"AI chưa trả lời được, hãy thử lại.";
+const SA=()=>!!window.BLINGO_STANDALONE;
+const AIOFF=()=>SA()?"Chưa kết nối AI. Bấm tên tài khoản ở góc trên → dán khóa Gemini miễn phí.":"Chưa kết nối được AI. Hãy cho phép trang gọi Claude khi được hỏi.";
+const aiOffH=()=>`<div class="aerr">${esc(AIOFF())}${SA()?' <button class="btn s" data-act="me">Kết nối AI</button>':""}</div>`;
+function aiKeyUI(){if(!SA())return"";let k="";try{k=localStorage.getItem("blingo_ai_key")||""}catch(e){}
+ return `<div class="card" style="background:var(--bg);margin:10px 0"><b>Kết nối AI (Gemini miễn phí)</b> ${AI?'<span class="tag">Đã kết nối</span>':'<span class="tag w">Chưa kết nối</span>'}
+ <ol class="small mute" style="padding-left:18px;margin:6px 0"><li>Vào aistudio.google.com, đăng nhập Gmail, bấm <b>Get API key → Create API key</b>.</li><li>Sao chép khóa, dán vào ô bên dưới rồi bấm Lưu khóa.</li></ol>
+ <input id="ai_key" type="password" autocomplete="off" placeholder="${k?"Đã lưu khóa …"+esc(k.slice(-4)):"Dán khóa API Gemini"}"><div class="row" style="margin-top:8px"><button class="btn s" data-act="aiKeySave">Lưu khóa</button>${k?'<button class="btn o s" data-act="aiKeyDel">Xóa khóa</button>':""}</div>
+ <p class="small mute" style="margin:8px 0 0">Khóa chỉ lưu trong trình duyệt này. Gói miễn phí của Google có thể dùng nội dung gửi đi để cải thiện sản phẩm của họ, nên không nhập họ tên hay thông tin cá nhân của học sinh vào các chức năng AI. Dùng máy chung thì nhớ bấm Xóa khóa.</p></div>`}
+const aiErr=x=>x&&x.code=="not_granted"?(SA()?"Khóa AI chưa có hoặc không hợp lệ. Vào tài khoản (góc trên) để kiểm tra khóa Gemini.":"Bạn chưa cho phép trang gọi Claude."):x&&x.code=="rate_limited"?"Đang quá giới hạn, hãy thử lại sau ít phút.":"AI chưa trả lời được, hãy thử lại.";
 function spSay(t){try{if(!SP.tts||!window.speechSynthesis)return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang="en-GB";u.rate=.95;speechSynthesis.speak(u)}catch(e){}}
 function spRecStop(){SP.want=0;if(SP.t0){SP.sec+=(Date.now()-SP.t0)/1000;SP.t0=0}const r=SP.rec;SP.rec=null;try{r&&r.stop()}catch(e){}}
 function spLeave(){spRecStop();try{window.speechSynthesis&&speechSynthesis.cancel()}catch(e){}clearInterval(SP.tm)}
@@ -400,7 +417,7 @@ function spAsk(pre){
 }
 function spGo(){spStart({part:val("sp_part")||"full",topic:val("sp_topic").trim(),lv:val("sp_lv")||"B1",n:val("sp_n")||"4",stu:val("sp_stu").trim(),cid:val("sp_cls")})}
 async function spStart(c){
- if(!AI)return toast("Chưa kết nối được AI. Hãy cho phép trang gọi Claude khi được hỏi.");
+ if(!AI)return toast(AIOFF());
  SP.cfg=c;const n=Math.min(8,Math.max(2,+c.n||4));
  const st={"1":`${n} câu Part 1 (câu hỏi ngắn về cuộc sống quen thuộc)`,"2":`1 thẻ Part 2 (part=2, "cue" là mảng 4 dòng: "You should say:" và 3 ý gợi ý)`,"3":`${n} câu Part 3 (câu hỏi trừu tượng, đòi hỏi giải thích, so sánh, dự đoán)`,"full":`3 câu Part 1, 1 thẻ Part 2 (part=2, "cue" là mảng 4 dòng: "You should say:" và 3 ý gợi ý), 3 câu Part 3`}[c.part]||"";
  const p=`Bạn là giám khảo Speaking. Tạo bộ câu hỏi luyện nói tiếng Anh cho học sinh THPT Việt Nam, trình độ ${c.lv} (CEFR).
@@ -488,7 +505,7 @@ function spV(){
  /* setup */
  const c=SP.cfg,sel=(id,arr,v)=>`<select id="${id}">${arr.map(([k,l])=>`<option value="${k}" ${k==v?"selected":""}>${l}</option>`).join("")}</select>`,hist=(S.sp||[]).slice().reverse();
  return h+`<div class="card"><p class="mute">Giám khảo AI đặt câu hỏi Speaking (đọc to bằng giọng tiếng Anh), học sinh trả lời bằng micro hoặc gõ chữ; cuối bài AI chấm theo Fluency, Lexical Resource, Grammar và góp ý từng câu.</p>
- ${AI?"":`<p class="aerr">Chức năng AI chưa được bật trên bản này. Quản trị viên cần cấu hình máy chủ AI (xem README.md).</p>`}
+ ${AI?"":aiOffH()}
  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
  <div><label class="small mute">Cấu trúc bài</label>${sel("sp_part",Object.entries(PARTN),c.part)}</div>
  <div><label class="small mute">Trình độ</label>${sel("sp_lv",[["A2","A2"],["B1","B1"],["B2","B2"],["C1","C1"]],c.lv)}</div>
@@ -599,7 +616,7 @@ Chỉ trả về JSON dạng {"results":[{"n":1,"pick":"A","unique":true}]} vớ
  return{ok:1,n:qs.length,flag,agree}
 }
 async function wRun(){
- if(!AI)return toast("Chưa kết nối được AI. Hãy cho phép trang gọi Claude khi được hỏi.");
+ if(!AI)return toast(AIOFF());
  if(W.ph=="run")return;
  if(!wUnit())return toast("Hãy nhập Unit & chủ đề.");
  const f=wF(),{T,M}=wPlan(f),ctx=wCtx();
@@ -648,7 +665,7 @@ function wizV(){
   <p class="small mute">Phân bố đáp án: A ${cnt[0]} · B ${cnt[1]} · C ${cnt[2]} · D ${cnt[3]}</p>
   <div class="row" style="margin-top:14px"><button class="btn" data-act="wzSave">Lưu vào Kho đề</button><button class="btn o" data-act="wzTry">Thử làm đề này</button><button class="btn o" data-act="dxl" data-id="__new" data-a="0">Word (đề)</button><button class="btn o" data-act="dxl" data-id="__new" data-a="1">Word (có đáp án)</button><button class="btn o" data-act="wzEdit">Chỉnh sửa câu hỏi</button><button class="btn o" data-act="wzNew">Tạo đề khác</button></div></div>`}
  const gs=W.book=="gs",free=!gs||W.unit=="x",opt=(arr,v)=>arr.map(([k,l])=>`<option value="${k}" ${k==v?"selected":""}>${l}</option>`).join("");
- return wizTop()+`<div class="card"><h2>Cấu hình tạo đề</h2>${W.err?`<div class="aerr" role="alert">${esc(W.err)}</div>`:""}${!AI?`<div class="aerr">Chức năng AI chưa được bật trên bản này. Quản trị viên cần cấu hình máy chủ AI (xem README.md).</div>`:""}
+ return wizTop()+`<div class="card"><h2>Cấu hình tạo đề</h2>${W.err?`<div class="aerr" role="alert">${esc(W.err)}</div>`:""}${!AI?aiOffH():""}
  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px">
  <div><label for="wz_g" class="small mute">Khối lớp</label><select id="wz_g" data-w="grade">${opt([["6","Lớp 6"],["7","Lớp 7"],["8","Lớp 8"],["9","Lớp 9"],["10","Lớp 10"],["11","Lớp 11"],["12","Lớp 12"]],W.grade)}</select></div>
  ${W.fmt=="mat"?"":`<div><label for="wz_u" class="small mute">Unit & chủ đề</label>${gs?`<select id="wz_u" data-w="unit">${GSU[W.grade].map((t,i)=>`<option value="${i+1}" ${W.unit==i+1?"selected":""}>Unit ${i+1} – ${t[0]} (${t[1]})</option>`).join("")}<option value="x" ${W.unit=="x"?"selected":""}>Khác (nhập tay)…</option></select>`:""}${free?`<input id="wz_f" data-w="free" value="${esc(W.free)}" placeholder="Ví dụ: Unit 4 – Urbanisation" style="${gs?"margin-top:6px":""}">`:""}</div>`}
@@ -964,6 +981,9 @@ document.addEventListener("click",e=>{
  if(A=="acin")return
  if(A=="aum"){AUM=D.m;AUE="";AUOK="";AUDEL=0;return render()}
  if(A=="auGo")return doAuth(D.m);
+ if(A=="aiKeySave"){const v=val("ai_key").trim();if(!v)return toast("Hãy dán khóa API vào ô trước.");if(v.length<20||/\s/.test(v))return toast("Khóa không đúng dạng, hãy sao chép lại.");try{localStorage.setItem("blingo_ai_key",v)}catch(e){return toast("Trình duyệt không cho lưu khóa.")}
+  return claude.use("sample").then(s=>{AI=s;toast(s?"Đã lưu khóa AI.":"Không bật được AI.");render()})}
+ if(A=="aiKeyDel"){try{localStorage.removeItem("blingo_ai_key")}catch(e){}AI=null;toast("Đã xóa khóa AI.");return render()}
  if(A=="pwGo")return changePw();
  if(A=="logout"){ACC=false;return logout()}
  if(A=="auDel1"){e.preventDefault();AUDEL=1;return render()}
