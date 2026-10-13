@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>B-Lingo</title>
+<meta name="description" content="B-Lingo – công cụ hỗ trợ giáo viên tiếng Anh: tạo đề bằng AI, giao bài, quản lý lớp, phòng thi thử và luyện nói.">
+<meta name="theme-color" content="#1e3a8a">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231f5bff'/%3E%3Ctext x='32' y='44' font-size='34' font-weight='700' text-anchor='middle' fill='white' font-family='Arial'%3EB%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap">
+<style>
+:root{--bg:#eef1f8;--card:#fff;--ink:#101a33;--mute:#5f6a88;--line:#e3e7f2;--pri:#1f5bff;--side:#1e3a8a;--ok:#127a55;--okbg:#e2f6ee;--bad:#b3261e;--badbg:#fdeaea;--warn:#fff4d6;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1224;--card:#171e38;--ink:#eef0f8;--mute:#a0a9c9;--line:#283155;--side:#111a3d;--okbg:#12362b;--ok:#5fd6a8;--badbg:#3a1a1a;--bad:#ff8a80;--warn:#3a3012}}
+:root[data-theme="dark"]{--bg:#0d1224;--card:#171e38;--ink:#eef0f8;--mute:#a0a9c9;--line:#283155;--side:#111a3d;--okbg:#12362b;--ok:#5fd6a8;--badbg:#3a1a1a;--bad:#ff8a80;--warn:#3a3012}
+*{box-sizing:border-box}html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 "Be Vietnam Pro",system-ui,sans-serif}
+.auth{position:fixed;inset:0;z-index:200;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto}.authc{width:100%;max-width:400px;margin:0}.authc label{display:block;margin:10px 0 4px}.aerr{background:var(--badbg);color:var(--bad);padding:8px 12px;border-radius:10px;margin:8px 0;font-size:.9rem}.aok{background:var(--okbg);color:var(--ok);padding:8px 12px;border-radius:10px;margin:8px 0;font-size:.9rem}body.locked main,body.locked #side{display:none}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid #ffb800;outline-offset:2px}
+aside{position:fixed;inset:0 auto 0 0;width:250px;background:var(--side);color:#fff;padding:14px 10px;display:flex;flex-direction:column;overflow:auto;z-index:20;transition:transform .2s}
+.collapsed aside{transform:translateX(-100%)}
+.brand{display:flex;gap:10px;align-items:center;padding:6px 8px 14px}.brand b{display:block}.brand small{opacity:.7}
+.logo{width:36px;height:36px;border-radius:10px;background:var(--pri);display:grid;place-items:center;font-weight:700}
+aside button.n{display:block;width:100%;text-align:left;background:none;border:0;color:#fff;padding:.6rem .8rem;border-radius:10px;cursor:pointer;font-weight:500}
+aside button.n.sub{padding-left:2rem;font-size:.92rem;opacity:.9}
+aside button.n[aria-current=page]{background:#fff;color:var(--side);font-weight:700;opacity:1}
+aside .h{padding:.7rem .8rem .2rem;font-size:.85rem;opacity:.75}
+.me{margin-top:auto;background:#ffffff1f;border-radius:12px;padding:10px;display:flex;gap:10px;align-items:center;cursor:pointer;border:0;color:#fff;text-align:left;width:100%}
+.av{width:32px;height:32px;border-radius:50%;background:#fff;color:var(--side);display:grid;place-items:center;font-weight:700}
+.top{position:sticky;top:0;z-index:10;background:var(--card);border-bottom:1px solid var(--line);padding:10px 16px;display:flex;align-items:center;gap:12px}
+.top .sp{flex:1}
+main{margin-left:250px;transition:margin .2s}.collapsed main{margin-left:0}
+.wrap{max-width:1000px;margin:auto;padding:18px}
+@media(max-width:850px){aside{transform:translateX(-100%)}main{margin-left:0}body.open aside{transform:none}}
+h1{font-size:1.5rem;margin:.2rem 0 .3rem}h2{font-size:1.05rem;margin:0 0 .6rem}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.sb{justify-content:space-between}
+.mute{color:var(--mute)}.small{font-size:.86rem}
+.hero{background:linear-gradient(120deg,#1e3a8a,#1f5bff 60%,#5b8dff);color:#fff;border:0;position:relative;overflow:hidden}
+.hero:after{content:"";position:absolute;right:-40px;top:-60px;width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,.1)}
+.hero h1{color:#fff;margin:.2rem 0}.hero .dt{opacity:.85;font-size:.85rem}.hero .sub{opacity:.92}.hero .btn{background:#fff;color:#1e3a8a}.hero .btn.o{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.45)}
+.kpi{display:flex;gap:12px;align-items:center;cursor:pointer;text-align:left;width:100%;margin:0;transition:transform .15s,box-shadow .15s}.kpi:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.08)}
+.kpi .ic{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;font-size:1.4rem;flex:none}
+.kpi b{font-size:1.7rem;line-height:1.1;display:block}.kpi span{color:var(--mute);font-size:.8rem;display:block}
+.tile{display:block;text-align:left;cursor:pointer;margin:0;width:100%;transition:transform .15s,box-shadow .15s}.tile:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.08)}
+.tile .ic{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-size:1.25rem;margin-bottom:8px}.tile b{display:block}.tile span{color:var(--mute);font-size:.82rem}
+.pbar{height:8px;border-radius:99px;background:var(--line);overflow:hidden}.pbar i{display:block;height:100%;border-radius:99px}
+.ring{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;flex:none;font-weight:700;font-size:.85rem}.ring i{width:42px;height:42px;border-radius:50%;background:var(--card);display:grid;place-items:center;font-style:normal}
+.hgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.eh{text-align:center;padding:22px 10px}.eh .ic{font-size:2.2rem}
+.fc{border:1px solid var(--line);background:var(--card);border-radius:99px;padding:.25rem .8rem;font-size:.85rem;cursor:pointer;font-weight:600}.fc[aria-pressed=true]{background:var(--pri);color:#fff;border-color:var(--pri)}.fc[aria-pressed=true] .mute{color:#fff;opacity:.85}
+.lnk{background:none;border:0;padding:0;font-weight:700;font-size:1rem;color:var(--ink);text-align:left;cursor:pointer}.lnk:hover{color:var(--pri)}
+.bkm{position:absolute;right:0;top:100%;z-index:6;min-width:240px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:6px;box-shadow:0 8px 24px rgba(0,0,0,.15);display:flex;flex-direction:column;margin-top:4px}.bkm button{background:none;border:0;text-align:left;padding:.5rem .7rem;border-radius:8px;cursor:pointer}.bkm button:hover{background:var(--bg)}
+.bkg>summary{cursor:pointer;padding:6px 0;margin-bottom:6px;list-style:none}.bkg>summary::-webkit-details-marker{display:none}.bkg>summary:before{content:"▾ ";color:var(--mute)}.bkg:not([open])>summary:before{content:"▸ "}
+.stat b{display:block;font-size:2rem;line-height:1.2;margin:.4rem 0}.stat span{color:var(--mute);font-size:.82rem;text-transform:uppercase;letter-spacing:.03em}
+.btn{background:var(--pri);color:#fff;border:0;border-radius:10px;padding:.55rem 1.1rem;font-weight:600;cursor:pointer}
+.btn.o{background:var(--card);color:var(--ink);border:1px solid var(--line)}
+.btn.d{background:var(--badbg);color:var(--bad)}.btn.s{padding:.3rem .7rem;font-size:.85rem}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+input,select,textarea{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:.55rem .7rem;width:100%}
+label{display:block;font-weight:600;font-size:.88rem;margin:.6rem 0 .25rem}
+.live{background:linear-gradient(90deg,#eef3ff,#f3f0ff);border-color:#cdd9ff;color:#101a33}
+.tag{font-size:.75rem;padding:.1rem .6rem;border-radius:99px;font-weight:600;background:var(--okbg);color:var(--ok)}
+.tag.w{background:var(--warn);color:#7a5600}.tag.b{background:#e6edff;color:#1f3fb0}
+.tabs{display:flex;gap:4px;background:var(--bg);border-radius:10px;padding:4px;flex-wrap:wrap}
+.tabs button{border:0;background:none;padding:.4rem .8rem;border-radius:8px;cursor:pointer;color:var(--mute);font-weight:600}
+.tabs button[aria-pressed=true]{background:var(--card);color:var(--ink)}
+.bub{background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:14px;font-size:1.08rem;line-height:1.5}.cue{margin-top:10px;padding:10px 12px;border-left:3px solid var(--pri);background:var(--card);font-size:.98rem}.bar{height:8px;border-radius:99px;background:var(--line);overflow:hidden}.bar i{display:block;height:100%;background:var(--pri)}.fix{padding:6px 10px;margin:6px 0;border-left:3px solid var(--warn);background:var(--bg);border-radius:6px}
+.stp{list-style:none;padding:0;margin:16px 0}.stp li{display:flex;gap:12px;align-items:flex-start;padding:10px 0;color:var(--mute)}.stp li.cur{color:var(--ink);font-weight:600}.stp li.done{color:var(--ok)}.dot{width:28px;height:28px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;flex:none;font-size:.85rem}.stp li.done .dot{background:var(--okbg);border-color:var(--ok)}.stp li.cur .dot{border-color:var(--pri)}.spin{width:14px;height:14px;border:2px solid var(--line);border-top-color:var(--pri);border-radius:50%;animation:sp .8s linear infinite}@keyframes sp{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.spin{animation:none}}
+.wt{width:100%;border-collapse:collapse;font-size:.92rem}.wt th,.wt td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}.sw{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:8px;vertical-align:-1px}.mx{display:grid;grid-template-columns:repeat(auto-fill,minmax(54px,1fr));gap:6px;margin:8px 0}.mx div{border-radius:8px;padding:4px 2px;text-align:center;border:2px solid transparent}.mx small{display:block;color:var(--mute);font-size:.7rem}.mx .fl{border-color:#e08a00}
+body.exam aside,body.exam .top{display:none}body.exam main{margin-left:0}
+.xw{position:fixed;inset:0;z-index:60;background:var(--bg);display:flex;flex-direction:column;gap:10px;padding:12px 16px;padding-top:max(12px,env(safe-area-inset-top))}.xw .split{height:auto;flex:1;min-height:0}.xw .xh{flex:none}.xf{flex:none;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:8px 10px}.xp{display:flex;flex-wrap:wrap;gap:6px;max-height:84px;overflow:auto}.xtm{font-size:1.4rem;font-variant-numeric:tabular-nums}.xtm.low{color:var(--bad)}
+.chip.fl{border-color:#e08a00;box-shadow:inset 0 -4px 0 #e08a00}.chip.cur{outline:2px solid var(--pri);outline-offset:1px}.lg{display:inline-block;width:12px;height:12px;border-radius:4px;border:1px solid var(--line);margin:0 4px 0 10px;vertical-align:-2px}.lg.on{background:var(--pri);border-color:var(--pri)}.lg.fl{border-color:#e08a00;box-shadow:inset 0 -4px 0 #e08a00}.flg[aria-pressed=true]{border-color:#e08a00;color:#b36b00;font-weight:700}
+.mdl{position:fixed;inset:0;z-index:120;background:#0009;display:flex;align-items:center;justify-content:center;padding:16px}.mdl>.card{max-width:420px;width:100%;margin:0}.toasts{z-index:150}
+@media(max-width:850px){.xw .split{grid-template-rows:minmax(0,40%) minmax(0,60%)}.xw .split.one{grid-template-rows:1fr}}
+.empty{text-align:center;color:var(--mute);padding:1.6rem .5rem}
+table{width:100%;border-collapse:collapse;font-size:.9rem}th,td{padding:.5rem;border-bottom:1px solid var(--line);text-align:left}
+.toasts{position:fixed;right:14px;top:70px;z-index:50;display:grid;gap:8px}
+.toast{background:var(--ink);color:var(--bg);padding:.7rem 1rem;border-radius:12px;max-width:320px;box-shadow:0 6px 20px #0004}
+.bell{position:relative;background:var(--card);border:1px solid var(--line);border-radius:99px;padding:.35rem .8rem;cursor:pointer}
+.bell i{position:absolute;top:-6px;right:-4px;background:#e5365b;color:#fff;border-radius:99px;font-size:.7rem;font-style:normal;padding:0 6px}
+textarea{min-height:90px;resize:vertical}
+.split2{display:grid;grid-template-columns:1fr 1.5fr;gap:14px;align-items:start;margin-bottom:14px}@media(max-width:850px){.split2{grid-template-columns:1fr}}
+.opt{display:block;width:100%;text-align:left;background:var(--card);border:1.5px solid var(--line);border-radius:10px;padding:.6rem .8rem;margin:5px 0;cursor:pointer}.opt[aria-pressed=true]{border-color:var(--pri);box-shadow:inset 0 0 0 1.5px var(--pri);font-weight:600}
+.chip{min-width:36px;height:36px;border-radius:8px;border:1px solid var(--line);background:var(--card);cursor:pointer;font-weight:600}.chip.on{background:var(--pri);color:#fff;border-color:var(--pri)}.chip.ok{background:var(--okbg);color:var(--ok);border-color:var(--ok)}.chip.bad{background:var(--badbg);color:var(--bad);border-color:var(--bad)}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:14px;height:calc(100vh - 230px);min-height:340px}.split.one{grid-template-columns:1fr}.pane{overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+@media(max-width:850px){.split{grid-template-columns:1fr;grid-template-rows:42% 58%;height:calc(100vh - 260px)}.split.one{grid-template-rows:1fr}}
+</style>
+</head>
+<body>
+<aside id="side" aria-label="Điều hướng"></aside>
+<main>
+<div class="top"><button class="btn o s" data-act="menu" aria-label="Mở hoặc đóng menu">Menu</button><div><b>B-Lingo</b> <span class="mute small">· Quản trị Giáo viên</span><div class="mute small">Hệ thống quản trị &amp; trợ lý giảng dạy Tiếng Anh</div></div><div class="sp"></div><button class="bell" data-act="bell" aria-label="Thông báo">Thông báo<i id="bc"></i></button></div>
+<div class="wrap" id="app" tabindex="-1"></div>
+</main>
+<div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+<script>
+/* Cấu hình triển khai: điền địa chỉ máy chủ AI (xem README.md). Để trống = tắt các chức năng AI. */
+window.BLINGO_CONFIG=window.BLINGO_CONFIG||{aiEndpoint:""};
+/* Lớp tương thích: app gọi claude.use("downloads") và claude.use("sample"). Ngoài môi trường Claude, hai chức năng này được thay như sau. */
+(function(){if(window.claude)return;var C=window.BLINGO_CONFIG||{};
+window.claude={use:async function(n){
+ if(n==="downloads")return{save:async function(o){var d=o.data,b=new Blob([typeof d==="string"?d:(d instanceof Uint8Array?d:new Uint8Array(d))],{type:o.type||"application/octet-stream"});var a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=o.filename||"file";document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},1500)}};
+ if(n==="sample"&&C.aiEndpoint)return async function(prompt,opt){var r;try{r=await fetch(C.aiEndpoint,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt:prompt})})}catch(e){throw{code:"network"}}
+  if(r.status===429)throw{code:"rate_limited"};if(r.status===401||r.status===403)throw{code:"not_granted"};if(!r.ok)throw{code:"error"};var j=await r.json();return{text:String(j.text||""),truncated:!!j.truncated}};
+ return null}}})();
+</script>
+<script>
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fm=s=>esc(s).replace(/\*\*([\s\S]+?)\*\*/g,"<b>$1</b>").replace(/&lt;u&gt;([\s\S]+?)&lt;\/u&gt;/g,"<u>$1</u>");
+const S0=()=>({me:"thầy/cô",c:[],e:[],a:[],t:[],th:""});
+let S=S0(),KEY="edm",ME=null,AUM="in",AUE="",AUOK="",AUFAIL=0,AUWAIT=0,AUDEL=0;
+let AUTH={u:[],s:""};
+try{const a=JSON.parse(localStorage.getItem("edm_auth")||"{}");if(Array.isArray(a.u))AUTH={u:a.u,s:a.s||""}}catch(e){}
+const saveAuth=()=>{try{localStorage.setItem("edm_auth",JSON.stringify(AUTH))}catch(e){}};
+const save=()=>{if(!ME)return;try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+function loadUser(u){ME=u;KEY=u.k;S=S0();try{Object.assign(S,JSON.parse(localStorage.getItem(KEY)||"{}"))}catch(e){}if(!S.me||S.me=="thầy/cô")S.me=u.name;}
+{const u=AUTH.u.find(x=>x.id==AUTH.s);if(u)loadUser(u)}
+const b64=a=>btoa(String.fromCharCode(...new Uint8Array(a))),unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+async function hashPw(pw,salt){const k=await crypto.subtle.importKey("raw",new TextEncoder().encode(pw),"PBKDF2",false,["deriveBits"]);return b64(await crypto.subtle.deriveBits({name:"PBKDF2",salt,iterations:150000,hash:"SHA-256"},k,256))}
+function normId(s){s=String(s||"").trim();if(!s.includes("@")){s=s.replace(/[\s.\-()]/g,"");if(/^\+?84\d{9}$/.test(s))s="0"+s.replace(/^\+?84/,"");if(/^0\d{9}$/.test(s))return{t:"phone",v:s};return null}s=s.toLowerCase();if(/^[a-z0-9._%+\-]+@gmail\.com$/.test(s))return{t:"email",v:s};return null}
+const msk=u=>u.t=="phone"?u.v.slice(0,3)+"****"+u.v.slice(-3):u.v.replace(/^(.{2}).*(@.*)$/,"$1***$2");
+async function doAuth(mode){
+ const ident=normId(val("au_id")),pw=val("au_pw");AUE="";AUOK="";
+ if(Date.now()<AUWAIT){AUE=`Thử sai quá nhiều lần. Vui lòng đợi ${Math.ceil((AUWAIT-Date.now())/1000)} giây.`;return render()}
+ if(!ident){AUE="Nhập số điện thoại 10 số (vd 0912345678) hoặc địa chỉ Gmail (…@gmail.com).";return render()}
+ if(!(window.crypto&&crypto.subtle)){AUE="Trình duyệt này không hỗ trợ mã hóa mật khẩu (cần HTTPS).";return render()}
+ const u=AUTH.u.find(x=>x.v==ident.v);
+ try{
+ if(mode=="up"){
+  const nm=val("au_nm").trim();
+  if(!nm)AUE="Nhập họ và tên.";else if(pw.length<6)AUE="Mật khẩu tối thiểu 6 ký tự.";else if(pw!=val("au_pw2"))AUE="Hai mật khẩu chưa giống nhau.";else if(u)AUE="Số điện thoại/Gmail này đã có tài khoản. Hãy đăng nhập.";
+  if(AUE)return render();
+  const salt=crypto.getRandomValues(new Uint8Array(16)),id=uid()+uid();
+  const nu={id,name:nm,t:ident.t,v:ident.v,salt:b64(salt),hash:await hashPw(pw,salt),k:AUTH.u.length?"edm_"+id:"edm"};
+  AUTH.u.push(nu);AUTH.s=id;saveAuth();loadUser(nu);S.me=nm;save();AUFAIL=0;return go("home")
+ }
+ if(!u){AUE="Không tìm thấy tài khoản. Hãy đăng ký trước.";return render()}
+ if(await hashPw(pw,unb64(u.salt))!==u.hash){AUFAIL++;if(AUFAIL>=5){AUWAIT=Date.now()+30000;AUFAIL=0;AUE="Sai 5 lần. Khóa đăng nhập 30 giây."}else AUE=`Mật khẩu chưa đúng (${AUFAIL}/5).`;return render()}
+ AUFAIL=0;AUTH.s=u.id;saveAuth();loadUser(u);view="home";render()
+ }catch(x){AUE="Có lỗi khi xử lý: "+x.message;render()}
+}
+async function changePw(){
+ const o=val("pw_o"),n=val("pw_n");AUE="";AUOK="";
+ try{
+  if(await hashPw(o,unb64(ME.salt))!==ME.hash)AUE="Mật khẩu hiện tại chưa đúng.";
+  else if(n.length<6)AUE="Mật khẩu mới tối thiểu 6 ký tự.";
+  else if(n!=val("pw_n2"))AUE="Hai mật khẩu mới chưa giống nhau.";
+  else{const salt=crypto.getRandomValues(new Uint8Array(16));ME.salt=b64(salt);ME.hash=await hashPw(n,salt);const i=AUTH.u.findIndex(x=>x.id==ME.id);AUTH.u[i]=ME;saveAuth();AUOK="Đã đổi mật khẩu."}
+ }catch(x){AUE="Có lỗi: "+x.message}
+ render()
+}
+function logout(){AUTH.s="";saveAuth();ME=null;S=S0();KEY="edm";AUM="in";AUE="";AUOK="";view="home";render()}
+function authV(){
+ const up=AUM=="up";
+ return `<div class="auth"><div class="card authc"><div class="brand" style="color:var(--ink)"><div class="logo">B</div><div><b>B-Lingo</b><small style="color:var(--mute)">Quản trị Giáo viên</small></div></div>
+ <div style="margin:2px 0 4px;font-weight:700;letter-spacing:.06em;font-size:.78rem;color:var(--pri)">LEARN SMART. SPEAK CONFIDENTLY.</div>
+ <div class="row" style="margin:14px 0 4px"><button class="btn ${up?"o":""}" data-act="aum" data-m="in" style="flex:1">Đăng nhập</button><button class="btn ${up?"":"o"}" data-act="aum" data-m="up" style="flex:1">Đăng ký</button></div>
+ ${AUE?`<div class="aerr" role="alert">${esc(AUE)}</div>`:""}${AUOK?`<div class="aok" role="status">${esc(AUOK)}</div>`:""}
+ ${up?`<label class="small mute">Họ và tên</label><input id="au_nm" autocomplete="name" placeholder="Nguyễn Văn A">`:""}
+ <label class="small mute">Số điện thoại hoặc Gmail</label><input id="au_id" autocomplete="username" inputmode="email" placeholder="0912345678 hoặc ten@gmail.com">
+ <label class="small mute">Mật khẩu</label><input id="au_pw" type="password" autocomplete="${up?"new-password":"current-password"}" placeholder="Tối thiểu 6 ký tự">
+ ${up?`<label class="small mute">Nhập lại mật khẩu</label><input id="au_pw2" type="password" autocomplete="new-password">`:""}
+ <button class="btn" data-act="auGo" data-m="${up?"up":"in"}" style="width:100%;margin-top:14px">${up?"Tạo tài khoản":"Đăng nhập"}</button>
+ ${!up?`<div class="small mute" style="margin-top:12px">${AUDEL?`Xóa tài khoản và toàn bộ dữ liệu trên trình duyệt này? <button class="btn o s" data-act="auDel2">Xóa hết</button> <button class="btn o s" data-act="auDel0">Hủy</button>`:`Quên mật khẩu? <a href="#" data-act="auDel1">Xem cách xử lý</a>`}</div>`:""}
+ <p class="small mute" style="margin-top:14px;line-height:1.5">Lưu ý: trang này chưa có máy chủ nên tài khoản chỉ lưu trong trình duyệt này (mật khẩu được băm, không lưu dạng chữ). Đây là khóa tiện lợi, <b>không phải bảo mật thật</b>; không có email/SMS khôi phục mật khẩu.</p></div></div>`
+}
+function acctV(){
+ return `<div class="auth" data-act="acx"><div class="card authc" data-act="acin"><div class="row sb"><b>Tài khoản</b><button class="btn o s" data-act="acx">Đóng</button></div>
+ <p class="small mute">${esc(ME.name)} · ${esc(msk(ME))}</p>
+ ${AUE?`<div class="aerr" role="alert">${esc(AUE)}</div>`:""}${AUOK?`<div class="aok" role="status">${esc(AUOK)}</div>`:""}
+ <label class="small mute">Mật khẩu hiện tại</label><input id="pw_o" type="password" autocomplete="current-password">
+ <label class="small mute">Mật khẩu mới</label><input id="pw_n" type="password" autocomplete="new-password">
+ <label class="small mute">Nhập lại mật khẩu mới</label><input id="pw_n2" type="password" autocomplete="new-password">
+ <div class="row" style="margin-top:14px"><button class="btn" data-act="pwGo">Đổi mật khẩu</button><button class="btn o" data-act="logout">Đăng xuất</button></div></div></div>`
+}
+let ACC=false;
+const uid=()=>Math.random().toString(36).slice(2,8),today=()=>new Date().toISOString().slice(0,10);
+const $=id=>document.getElementById(id),val=id=>($(id)||{}).value||"";
+const NAV=[["home","Tổng quan"],["classes","Quản lý lớp"],["h","Đề thi"],["create","Tạo đề",1],["bank","Kho đề đã lưu",1],["assign","Giao bài cho lớp",1],["h","Luyện tập"],["thpt","Phòng thi thử THPT",1],["tutor","Luyện nói với AI",1],["h","Quản lý"],["rep","Kết quả & Báo cáo",1],["tasks","Nhiệm vụ & Nhắc nhở",1]];
+let view="home",tab=0,E={mode:"wiz",title:"",qs:[],src:"teacher",lesson:"",n:"10",lv:"B1",open:null},CSV="",PR="";
+const cls=id=>S.c.find(c=>c.id==id),ex=id=>S.e.find(e=>e.id==id);
+const subs=()=>S.a.flatMap(a=>a.subs.map(s=>({...s,a})));
+const unseen=()=>subs().filter(s=>!s.seen);
+function toast(m,ms){const d=document.createElement("div");d.className="toast";d.textContent=m;$("toasts").append(d);setTimeout(()=>d.remove(),ms||4500)}
+function go(v){BK.menu=null;BK.del=null;if(v=="bank"&&view=="bank")BK.det=null;if(v!="assign"&&v!="asgd")AS.pre="";if(view=="tutor"&&v!="tutor")spLeave();if(TK&&!TK.done&&view=="take"&&v!="take")return toast("Đang làm bài, hãy nộp bài hoặc bấm Thoát.");view=v;document.body.classList.remove("open");render();scrollTo(0,0)}
+function render(){
+ document.documentElement.dataset.theme=S.th||"";document.body.classList.toggle("exam",view=="take"&&!!ME);
+ let ov=$("authov");if(!ov){ov=document.createElement("div");ov.id="authov";document.body.append(ov)}
+ if(!ME){ov.innerHTML=authV();document.body.classList.add("locked");$("side").innerHTML="";$("app").innerHTML="";const f=$(AUM=="up"?"au_nm":"au_id");if(f)f.focus();return}
+ document.body.classList.remove("locked");ov.innerHTML=ACC?acctV():"";
+ $("side").innerHTML=`<div class="brand"><div class="logo">B</div><div><b>B-Lingo</b><small>Quản trị Giáo viên</small></div></div>`+NAV.map(([k,l,s])=>k=="h"?`<div class="h">${l}</div>`:`<button class="n ${s?"sub":""}" data-go="${k}" ${view==k||(k=="assign"&&(view=="asgd"||view=="subd"))||(k=="classes"&&view=="cdet")?'aria-current="page"':""}>${l}</button>`).join("")+`<div style="height:12px"></div><button class="me" data-act="me"><span class="av">${esc(S.me[0]||"T").toUpperCase()}</span><span><b>${esc(S.me)}</b><br><small>Giáo viên</small></span></button><button class="n" data-act="theme" style="margin-top:6px">Đổi giao diện sáng/tối</button><button class="n" data-act="logout">Đăng xuất</button>`;
+ const u=unseen().length;$("bc").textContent=u||"";$("bc").style.display=u?"":"none";
+ $("app").style.maxWidth=view=="viewer"||view=="take"?"1400px":"";$("app").innerHTML=V[view]();
+}
+const V={home(){
+ const stu=S.c.reduce((n,c)=>n+c.st.length,0),open=S.a.filter(a=>!aClosed(a)).length,nu=unseen().length;
+ const per={};subs().forEach(s=>{const k=s.name+"|"+s.a.cid;(per[k]=per[k]||[]).push(s.sc)});
+ const weak=Object.entries(per).map(([k,v])=>[k.split("|")[0],v.reduce((x,y)=>x+y,0)/v.length]).filter(x=>x[1]<5);
+ const dueT=S.t.filter(t=>!t.done&&t.due&&t.due<=today());
+ const lists=[weak.length?weak.map(w=>`<div class="row sb card" style="padding:10px;margin:6px 0"><span>${esc(w[0])}</span><span class="tag w">TB ${w[1].toFixed(1)}</span></div>`).join(""):`<div class="eh"><div class="ic">🌟</div>Chưa có học sinh nào dưới mức trung bình.</div>`,
+ nu?unseen().map(s=>`<div class="row sb card" style="padding:10px;margin:6px 0"><span>${esc(s.name)} · ${esc(ex(s.a.eid)?.title||"")}${s.sim?' <span class="tag w">giả lập</span>':""}</span><b>${s.sc}</b></div>`).join("")+`<button class="btn o s" data-act="seen">Đánh dấu đã xem</button>`:`<div class="eh"><div class="ic">📭</div>Không có bài nộp mới.${S.a.length?"":'<br><br><button class="btn s" data-go="assign">Giao bài đầu tiên</button>'}</div>`,
+ dueT.length?dueT.map(t=>`<div class="card" style="padding:10px;margin:6px 0">${esc(t.x)} <span class="mute small">(hạn ${t.due})</span></div>`).join(""):`<div class="eh"><div class="ic">✅</div>Không có nhiệm vụ đến hạn.</div>`];
+ const hr=new Date().getHours(),gr=hr<11?"Chào buổi sáng":hr<14?"Chào buổi trưa":hr<18?"Chào buổi chiều":"Chào buổi tối";
+ const dts=new Date().toLocaleDateString("vi-VN",{weekday:"long",day:"2-digit",month:"2-digit",year:"numeric"});
+ const steps=[[S.c.length,"Tạo lớp và nhập danh sách học sinh","classes","Thêm lớp"],[S.e.length,"Tạo đề thi (thủ công, bằng AI hoặc số hóa từ file)","create","Tạo đề"],[S.a.length,"Giao bài cho lớp","assign","Giao bài"]];
+ const done=steps.filter(x=>x[0]).length,deg=Math.round(done/3*360);
+ const kp=(ic,bg,col,n,lb,go)=>`<button class="card kpi" data-go="${go}"><div class="ic" style="background:${bg};color:${col}">${ic}</div><div><b>${n}</b><span>${lb}</span></div></button>`;
+ const tl=(ic,bg,t,d,go)=>`<button class="card tile" data-go="${go}"><div class="ic" style="background:${bg}">${ic}</div><b>${t}</b><span>${d}</span></button>`;
+ const cls=S.c.map(c=>{const st=cStats(c);return{c,st}});
+ const clsCol=v=>v==null?"var(--line)":v>=7?"var(--ok)":v>=5?"#f5a623":"var(--bad)";
+ return `<div class="card hero"><div class="row sb"><div><div class="dt">${esc(dts)}</div><h1>${gr}, ${esc(S.me)}!</h1><div class="sub">Hôm nay có <b>${nu}</b> bài nộp mới và <b>${S.t.filter(t=>!t.done).length}</b> nhiệm vụ đang theo dõi.</div></div><div class="row"><button class="btn" data-go="create">+ Tạo đề</button><button class="btn o" data-go="assign">Giao bài</button></div></div></div>
+ ${done<3?`<div class="card"><div class="row" style="gap:14px;margin-bottom:6px"><div class="ring" style="background:conic-gradient(var(--pri) ${deg}deg,var(--line) 0)"><i>${done}/3</i></div><div><h2 style="margin:0">Bắt đầu nhanh</h2><div class="mute small">Ba bước để giao bài đầu tiên cho lớp.</div></div></div>${steps.map((x,i)=>`<div class="row sb" style="padding:8px 0;border-top:1px solid var(--line)"><span>${x[0]?"✓ ":"○ "}${i+1}. ${x[1]}</span>${x[0]?'<span class="tag">Xong</span>':`<button class="btn s" data-go="${x[2]}">${x[3]}</button>`}</div>`).join("")}</div>`:""}
+ <div class="grid">${kp("🏫","rgba(31,91,255,.12)","var(--pri)",S.c.length,"Tổng số lớp","classes")}${kp("👩‍🎓","rgba(22,163,74,.14)","var(--ok)",stu,"Tổng số học sinh","classes")}${kp("📥","rgba(245,158,11,.16)","#d97706",nu,"Bài nộp mới cần xem","rep")}${kp("📝","rgba(139,92,246,.15)","#7c3aed",open,"Bài giao đang mở","assign")}</div>
+ <h2 style="margin-top:6px">Lối tắt</h2>
+ <div class="hgrid" style="margin-bottom:14px">${tl("✨","rgba(31,91,255,.12)","Tạo đề bằng AI","Theo sách Global Success","create")}${tl("📤","rgba(22,163,74,.14)","Giao bài cho lớp","Đặt hạn, thời gian, số lần","assign")}${tl("🎯","rgba(245,158,11,.16)","Phòng thi thử THPT","Đề 40 câu, 50 phút","thpt")}${tl("🎤","rgba(236,72,153,.14)","Luyện nói với AI","Giám khảo Speaking","tutor")}${tl("📚","rgba(139,92,246,.15)","Kho đề đã lưu","Xem, xuất Word","bank")}${tl("📊","rgba(14,165,233,.15)","Kết quả &amp; Báo cáo","Điểm theo lớp, xuất Excel","rep")}</div>
+ <div class="card"><h2>Tiến độ theo lớp</h2>${cls.length?cls.map(({c,st})=>`<div style="padding:8px 0;border-top:1px solid var(--line)"><div class="row sb"><b>${esc(c.n)}</b><span class="mute small">${c.st.length} HS · ${st.A.length} bài giao · ${st.avg==null?"chưa có điểm":"TB "+st.avg.toFixed(1)}${st.rate==null?"":" · nộp "+st.rate+"%"}</span></div><div class="pbar" style="margin-top:6px"><i style="width:${st.avg==null?0:Math.min(100,st.avg*10)}%;background:${clsCol(st.avg)}"></i></div></div>`).join(""):`<div class="eh"><div class="ic">🏫</div>Chưa có lớp nào.<br><br><button class="btn" data-go="classes">Tạo lớp đầu tiên</button></div>`}</div>
+ <div class="card"><div class="row sb"><div><h2>Cần chú ý hôm nay</h2><div class="mute small">Học sinh và việc cần hỗ trợ kịp thời</div></div><div class="tabs">${["Học sinh cần bổ trợ ("+weak.length+")","Bài mới ("+nu+")","Nhiệm vụ đến hạn ("+dueT.length+")"].map((t,i)=>`<button data-act="tab" data-i="${i}" aria-pressed="${tab==i}">${t}</button>`).join("")}</div></div><div style="margin-top:12px">${lists[tab]}</div></div>`},
+classes(){return `<div class="row sb"><h1>Quản lý lớp</h1><button class="btn" data-act="cfToggle">${CF.open?"Đóng":"+ Thêm lớp"}</button></div>${CF.open?clsForm():""}${S.c.length?S.c.map(clsCard).join(""):'<div class="card empty">Chưa có lớp nào. Bấm "+ Thêm lớp" để tạo lớp đầu tiên.</div>'}`},
+create(){
+ const m=E.mode,ai=m=="ai"||m=="lesson";
+ if(m=="wiz")return wizV();
+ const prompt=`Bạn là giáo viên tiếng Anh THPT Việt Nam. ${m=="lesson"?"Dựa trên nội dung bài học sau:\n"+E.lesson:"Về chủ đề/ngữ pháp: "+E.lesson}\n\nHãy soạn ${E.n} câu trắc nghiệm tiếng Anh mức ${E.lv}, mỗi câu 4 đáp án, chỉ có MỘT đáp án đúng, không mơ hồ. Chỉ trả về JSON thuần (không giải thích, không markdown) theo dạng:\n[{"q":"câu hỏi","o":["A","B","C","D"],"a":0}]\ntrong đó "a" là chỉ số (0-3) của đáp án đúng.`;
+ return `<h1>Tạo đề</h1><div class="card">${ctabs(m)}
+ <label for="tt">Tên đề</label><input id="tt" data-m="title" value="${esc(E.title)}" placeholder="Ví dụ: Kiểm tra 15 phút – Conditionals">
+ ${m=="scan"?scanUI():ai?`<div class="card" style="background:var(--warn);margin-top:14px"><b>Cách dùng AI</b><div class="small">${AI?"Bấm Tạo câu hỏi bằng AI để Claude soạn đề ngay trong trang. Lần đầu trình duyệt sẽ hỏi bạn cho phép.":"AI chưa sẵn sàng. Bạn có thể tạo lời nhắc, dán vào Claude hoặc Gemini rồi dán JSON vào ô bên dưới."}</div></div>
+ <label for="ls">${m=="lesson"?"Nội dung bài học (dán văn bản)":"Chủ đề hoặc điểm ngữ pháp"}</label><textarea id="ls" data-m="lesson">${esc(E.lesson)}</textarea>
+ <div class="grid"><div><label for="nn">Số câu</label><input id="nn" data-m="n" value="${esc(E.n)}"></div><div><label for="lv">Mức CEFR</label><select id="lv" data-m="lv">${["A1","A2","B1","B2","C1"].map(l=>`<option ${E.lv==l?"selected":""}>${l}</option>`).join("")}</select></div></div>
+ <div style="margin:10px 0" class="row">${AI?'<button class="btn" data-act="aiGen">Tạo câu hỏi bằng AI</button>':""}<button class="btn o" data-act="mkPrompt">Tạo lời nhắc</button></div>${PR?`<textarea id="pr" readonly>${esc(PR)}</textarea><button class="btn o s" data-act="copy" style="margin-top:6px">Sao chép lời nhắc</button>`:""}
+ <label for="js">Dán kết quả JSON từ AI</label><textarea id="js"></textarea><div style="margin-top:8px"><button class="btn" data-act="imp">Nhập câu hỏi</button></div>`:`<h2 style="margin-top:16px">Thêm câu hỏi</h2><label for="qq">Câu hỏi</label><input id="qq">${[0,1,2,3].map(i=>`<label for="o${i}">Đáp án ${"ABCD"[i]}</label><input id="o${i}">`).join("")}<label for="ca">Đáp án đúng</label><select id="ca">${"ABCD".split("").map((l,i)=>`<option value="${i}">${l}</option>`).join("")}</select><div style="margin-top:10px"><button class="btn o" data-act="addQ">Thêm câu</button></div>`}</div>
+ <div class="card"><div class="row sb"><h2>Câu hỏi trong đề (${E.qs.length})</h2>${E.src=="ai"?'<span class="tag w">AI tạo, cần giáo viên đọc lại</span>':E.src=="scan"?'<span class="tag w">Số hóa từ file, cần kiểm tra</span>':'<span class="tag">Giáo viên soạn</span>'}</div>${E.qs.length?E.qs.map((q,i)=>qHtml(q,i+1)+`<button class="btn d s" data-act="rmQ" data-i="${i}">Xóa câu</button>`).join("<hr>"):'<div class="empty">Chưa có câu hỏi nào.</div>'}<div style="margin-top:12px"><div class="row"><button class="btn" data-act="saveE" ${E.qs.length?"":"disabled"}>Lưu vào kho đề</button><button class="btn o" data-act="vprev" ${E.qs.length?"":"disabled"}>Xem trước chia đôi màn hình</button></div></div></div>`},
+bank(){return bankV()},
+assign(){return assignV()},
+thpt(){
+ const L=[...(W.exam&&!W.saved?[{id:"__new",title:(W.title||"Đề vừa tạo")+" (chưa lưu)",qs:W.exam.qs,src:"ai"}]:[]),...S.e.slice().reverse()];
+ return `<h1>Phòng thi thử THPT</h1><div class="card"><h2>Chọn đề để vào phòng thi</h2><p class="mute small">Chọn một đề để vào phòng thi: toàn màn hình, bài đọc bên trái – câu hỏi bên phải, đồng hồ đếm ngược (đề 40 câu mặc định 50 phút), thước câu hỏi, gắn cờ xem lại, nộp bài, bảng điểm và lời giải.</p>${L.length?L.map(e=>`<div class="row sb" style="padding:10px 0;border-top:1px solid var(--line)"><div><b>${esc(e.title)}</b><div class="mute small">${e.qs.length} câu${e.qs.length==40?" · đủ cấu trúc 40 câu":""}${e.src=="ai"?" · AI tạo":e.src=="scan"?" · số hóa từ file":""}</div></div><button class="btn s" data-act="thptExam" data-id="${e.id}">Vào phòng thi</button></div>`).join(""):`<div class="empty">Chưa có đề nào.<br><br><button class="btn" data-go="create">Tạo đề</button></div>`}</div>`},
+tutor(){return spV()},
+video(){return na("Studio Video","Tạo video bài giảng bằng AI cần dịch vụ bên ngoài và máy chủ. Bản này chưa hỗ trợ.")},
+tasks(){return `<h1>Nhiệm vụ &amp; Nhắc nhở</h1><div class="card"><div class="row"><input id="tk" placeholder="Việc cần làm" style="flex:2"><input id="td" type="date" style="flex:1"><button class="btn" data-act="addT">Thêm</button></div></div>${S.t.length?S.t.map(t=>`<div class="card row sb" style="padding:12px"><label style="margin:0;display:flex;gap:10px;align-items:center;font-weight:500"><input type="checkbox" style="width:auto" data-act="chk" data-id="${t.id}" ${t.done?"checked":""}><span style="${t.done?"text-decoration:line-through;opacity:.6":""}">${esc(t.x)}</span> ${t.due?`<span class="mute small">hạn ${t.due}</span>`:""}</label><button class="btn d s" data-act="delT" data-id="${t.id}">Xóa</button></div>`).join(""):'<div class="card empty">Chưa có nhiệm vụ nào.</div>'}`},
+rep(){const rows=subs();CSV="Lớp,Đề,Học sinh,Điểm,Giả lập,Thời gian\n"+rows.map(s=>[s.cls||cls(s.a.cid)?.n,ex(s.a.eid)?.title,s.name,s.sc,s.sim?"có":"không",new Date(s.at).toLocaleString("vi-VN")].map(v=>`"${String(v??"").replace(/"/g,'""')}"`).join(",")).join("\n");
+ return `<h1>Kết quả &amp; Báo cáo</h1>${S.a.length?`<div class="card" style="overflow:auto"><table><tr><th>Đề</th><th>Lớp</th><th>Đã nộp</th><th>Điểm TB</th></tr>${S.a.map(a=>`<tr><td>${esc(ex(a.eid)?.title||"")}</td><td>${esc(cls(a.cid)?.n||"")}</td><td>${a.subs.length}/${cls(a.cid)?cls(a.cid).st.length:"–"}</td><td>${a.subs.length?(a.subs.reduce((x,s)=>x+s.sc,0)/a.subs.length).toFixed(1):"–"}</td></tr>`).join("")}</table></div><div class="card"><h2>Xuất CSV</h2><textarea id="cv" readonly>${esc(CSV)}</textarea><div style="margin-top:8px"><button class="btn" data-act="copyCsv">Sao chép CSV</button></div><p class="mute small">Dán vào Excel hoặc Google Sheets.</p></div>`:'<div class="card empty">Chưa có dữ liệu. Giao bài cho lớp trước, rồi xem báo cáo tại đây.</div>'}${S.c.length?`<div class="card"><h2>Xuất bảng điểm lớp ra Excel</h2><div class="row">${S.c.map(c=>`<button class="btn o s" data-act="xGrades" data-id="${c.id}">${esc(c.n)}</button>`).join("")}</div></div>`:""}`}};
+let VW=null;
+function blocks(qs){const B=[];qs.forEach((q,i)=>{const ml=q.q.includes("\n"),key=q.p?"p:"+q.p:ml?"m:"+i:"",last=B[B.length-1];if(key&&q.p&&last&&last.key==key)last.items.push({q,n:i+1});else if(!key&&last&&last.key==="")last.items.push({q,n:i+1});else B.push({key,left:q.p||(ml?q.q:""),items:[{q,n:i+1}]})});return B}
+const vItem=(q,n,ans,rev)=>{const alone=!q.p&&q.q.includes("\n"),pk=rev?rev[n-1]:undefined,wrong=rev&&pk!==q.a;return `<div style="margin-bottom:18px">${alone?"<b>"+n+".</b> Chọn thứ tự sắp xếp đúng:":qTxt(q,n)}${q.chk&&ans?' <span class="tag w">cần kiểm tra đáp án</span>':""}${q.o.map((o,i)=>{const ok=ans&&i==q.a,bad=rev&&pk===i&&i!=q.a;return `<div style="padding:4px 8px;margin:3px 0;border-radius:8px;${ok?"background:var(--okbg);color:var(--ok);font-weight:600":bad?"background:var(--badbg);color:var(--bad);font-weight:600":""}"><b>${"ABCD"[i]}.</b> ${fm(o)}${ok?" ✓":""}${bad?" ✗ bạn chọn":""}</div>`}).join("")}${rev&&pk==null?'<div class="small mute">Bạn chưa trả lời câu này.</div>':""}${wrong?`<button class="btn o s" data-act="explain" data-i="${n-1}">Giải thích bằng AI</button>${(q.ex||EXP[n-1])?'<div class="card" style="padding:10px;margin:6px 0 0;white-space:pre-wrap">'+esc((q.ex||EXP[n-1]))+'<div class="small mute" style="margin-top:4px">AI giải thích, giáo viên nên kiểm tra lại.</div></div>':""}`:""}</div>`};
+function viewer(){const B=blocks(VW.qs);if(!B.length)return '<div class="card empty">Đề chưa có câu hỏi.<br><br><button class="btn" data-act="vclose">Quay lại</button></div>';const i=Math.max(0,Math.min(VW.i,B.length-1));VW.i=i;const b=B[i],lo=b.items[0].n,hi=b.items[b.items.length-1].n;
+return `<div class="row sb" style="margin-bottom:10px"><div><b style="font-size:1.1rem">${esc(VW.t)}</b><div class="mute small">Phần ${i+1}/${B.length} · Câu ${lo===hi?lo:lo+"–"+hi}</div></div><button class="btn o" data-act="vclose">Đóng</button></div>
+<div class="row" style="margin-bottom:10px"><button class="btn o s" data-act="vgo" data-d="-1" ${i?"":"disabled"}>Phần trước</button><select id="vsel" style="width:auto" aria-label="Chọn phần">${B.map((x,k)=>`<option value="${k}" ${k==i?"selected":""}>Phần ${k+1}: câu ${x.items[0].n}${x.items.length>1?"–"+x.items[x.items.length-1].n:""}</option>`).join("")}</select><button class="btn o s" data-act="vgo" data-d="1" ${i<B.length-1?"":"disabled"}>Phần sau</button><label style="margin:0;display:flex;gap:6px;align-items:center;font-weight:500"><input type="checkbox" id="vans" style="width:auto" ${VW.ans?"checked":""}>Hiện đáp án</label></div>
+<div class="split ${b.left?"":"one"}">${b.left?`<div class="pane" tabindex="0" aria-label="Nội dung bài"><div class="mute small" style="margin-bottom:6px">Nội dung bài</div><div style="white-space:pre-wrap">${fm(b.left)}</div></div>`:""}<div class="pane" tabindex="0" aria-label="Câu hỏi"><div class="mute small" style="margin-bottom:6px">Câu hỏi</div>${b.items.map(x=>vItem(x.q,x.n,VW.ans,VW.rev)).join("")}</div></div>`}
+V.viewer=viewer;
+let TK=null,TKP=null,TI=null,EXP={};
+const fmt=ms=>{const s=Math.ceil(ms/1000);return Math.floor(s/60)+":"+String(s%60).padStart(2,"0")};
+function startTake(P,min,name){TK={qs:P.qs,t:P.t,ans:Array(P.qs.length).fill(null),fl:Array(P.qs.length).fill(0),i:0,end:Date.now()+min*60000,t0:Date.now(),min,aid:P.aid,name,back:P.back,cf:0,done:false};EXP={};clearInterval(TI);TI=setInterval(tick,1000);go("take")}
+function tick(){if(!TK||TK.done)return clearInterval(TI);const l=Math.max(0,TK.end-Date.now()),el=$("tm");if(el){el.textContent=fmt(l);el.classList.toggle("low",l<=300000)}if(l<=300000&&l>0&&!TK.w5){TK.w5=1;toast("Còn 5 phút.")}if(l<=60000&&l>0&&!TK.w1){TK.w1=1;toast("Còn 1 phút!")}if(l<=0){toast("Hết giờ, bài được nộp tự động.");submitTake()}}
+function submitTake(){const n=TK.qs.length,cor=TK.ans.filter((a,i)=>a===TK.qs[i].a).length;TK.cor=cor;TK.sc=Math.round(cor/n*100)/10;TK.used=Math.min(Date.now()-TK.t0,TK.min*60000);TK.done=true;clearInterval(TI);closeXm();if(TK.aid){const a=S.a.find(x=>x.id==TK.aid);if(a){a.subs.push({name:TK.name,sc:TK.sc,at:Date.now(),sim:0,seen:0,cor,n,ans:TK.ans});save()}}go("tresult")}
+const takeItem=(q,n)=>{const alone=!q.p&&q.q.includes("\n");return `<div style="margin-bottom:18px">${alone?"<b>"+n+".</b> Chọn thứ tự sắp xếp đúng:":qTxt(q,n)}${q.o.map((o,i)=>`<button class="opt" data-act="tpick" data-n="${n-1}" data-o="${i}" aria-pressed="${TK.ans[n-1]===i}"><b>${"ABCD"[i]}.</b> ${fm(o)}</button>`).join("")}<button class="btn o s flg" data-act="tflag" data-n="${n-1}" aria-pressed="${!!(TK.fl&&TK.fl[n-1])}">${TK.fl&&TK.fl[n-1]?"⚑ Đã gắn cờ":"⚐ Gắn cờ xem lại"}</button></div>`};
+function takeStart(){const P=TKP,def=P.min||Math.max(5,Math.round(P.qs.length*1.25));P.def=def;return `<h1>Làm bài</h1><div class="card"><b>${esc(P.t)}</b><div class="mute">${P.qs.length} câu. Vào phòng thi, menu bên trái sẽ tự ẩn để dành toàn màn hình: nội dung bên trái, câu hỏi bên phải, thước câu hỏi ở chân trang.</div>${P.aid?`<label for="tst">Học sinh làm bài</label><select id="tst"><option value="">Chọn học sinh</option>${P.left.map(n=>`<option>${esc(n)}</option>`).join("")}</select>`:'<div class="small mute" style="margin-top:6px">Làm thử: kết quả không được lưu.</div>'}<label for="tmin">Thời gian (phút)</label><input id="tmin" type="number" min="1" value="${def}" style="max-width:140px"><div class="row" style="margin-top:12px"><button class="btn" data-act="tstart">Bắt đầu làm bài</button><button class="btn o" data-act="tback">Quay lại</button></div></div>`}
+function take(){const B=blocks(TK.qs),n=TK.qs.length;TK.i=Math.max(0,Math.min(TK.i,B.length-1));const i=TK.i,b=B[i],lo=b.items[0].n,hi=b.items[b.items.length-1].n;if(!TK.fl)TK.fl=Array(n).fill(0);
+return `<div class="xw"><div class="row sb xh"><div><b style="font-size:1.1rem">${esc(TK.t)}</b>${TK.name?' · '+esc(TK.name):""}<div class="mute small">Phần ${i+1}/${B.length} · Câu ${lo===hi?lo:lo+"–"+hi}</div></div><div class="row"><b id="tm" class="xtm" role="timer" aria-label="Thời gian còn lại">${fmt(Math.max(0,TK.end-Date.now()))}</b><button class="btn d s" data-act="tquit">Thoát bài thi</button><button class="btn" data-act="tsubmit">Nộp bài</button></div></div>
+<div class="split ${b.left?"":"one"}">${b.left?`<div class="pane" tabindex="0" aria-label="Nội dung bài"><div class="mute small" style="margin-bottom:6px">Nội dung bài</div><div style="white-space:pre-wrap">${fm(b.left)}</div></div>`:""}<div class="pane" tabindex="0" aria-label="Câu hỏi"><div class="mute small" style="margin-bottom:6px">Câu hỏi</div>${b.items.map(x=>takeItem(x.q,x.n)).join("")}</div></div>
+<div class="xf"><div class="row sb" style="margin-bottom:6px"><span class="small mute"><span class="lg on"></span>Đã làm <span class="lg fl"></span>Gắn cờ <span class="lg"></span>Chưa làm</span><span class="row"><button class="btn o s" data-act="tgo" data-d="-1" ${i?"":"disabled"}>Phần trước</button><button class="btn o s" data-act="tgo" data-d="1" ${i<B.length-1?"":"disabled"}>Phần sau</button></span></div>
+<div class="xp" role="group" aria-label="Thước câu hỏi">${TK.qs.map((q,k)=>`<button class="chip ${TK.ans[k]!=null?"on":""} ${TK.fl[k]?"fl":""} ${k+1>=lo&&k+1<=hi?"cur":""}" id="pc${k}" data-act="tjump" data-n="${k}" aria-label="Câu ${k+1}${TK.ans[k]!=null?", đã làm":""}${TK.fl[k]?", gắn cờ":""}">${k+1}</button>`).join("")}</div></div></div>`}
+function xm(kind){closeXm();const n=TK.qs.length,un=TK.ans.filter(a=>a==null).length,fl=TK.fl.filter(Boolean).length,d=document.createElement("div");d.className="mdl";d.id="xmdl";d.setAttribute("role","dialog");d.setAttribute("aria-modal","true");
+ d.innerHTML=kind=="quit"?`<div class="card"><h2>Thoát bài thi?</h2><p>Bài làm hiện tại sẽ <b>không được lưu</b> và đồng hồ sẽ dừng. Bạn có chắc muốn thoát?</p><div class="row"><button class="btn d" data-act="tquit2">Thoát bài thi</button><button class="btn o" data-act="tstay" id="xmf">Ở lại làm bài</button></div></div>`:`<div class="card"><h2>Nộp bài?</h2><p>Đã làm <b>${n-un}/${n}</b> câu${un?`, còn <b>${un}</b> câu chưa làm`:""}${fl?`, <b>${fl}</b> câu đang gắn cờ xem lại`:""}. Sau khi nộp không thể sửa.</p><div class="row"><button class="btn" data-act="tsubmit2">Nộp bài</button><button class="btn o" data-act="tstay" id="xmf">Làm tiếp</button></div></div>`;
+ document.body.append(d);const f=$("xmf");if(f)f.focus()}
+function closeXm(){const d=$("xmdl");if(d)d.remove()}
+function tresult(){const B=blocks(TK.qs),n=TK.qs.length;return `<h1>Kết quả: ${esc(TK.t)}</h1>${TK.name?`<div class="mute">Học sinh: ${esc(TK.name)} (đã lưu vào bài giao)</div>`:'<div class="mute small">Làm thử, kết quả không được lưu.</div>'}<div class="grid" style="margin:12px 0"><div class="card stat"><span>Điểm (thang 10)</span><b>${TK.sc}</b></div><div class="card stat"><span>Số câu đúng</span><b>${TK.cor}/${n}</b></div><div class="card stat"><span>Thời gian làm bài</span><b>${fmt(TK.used)}</b></div></div>
+<div class="card"><h2>Theo từng phần</h2><table><tr><th>Phần</th><th>Câu</th><th>Đúng</th></tr>${B.map((b,k)=>{const c=b.items.filter(x=>TK.ans[x.n-1]===x.q.a).length;return `<tr><td>${k+1}</td><td>${b.items[0].n}${b.items.length>1?"–"+b.items[b.items.length-1].n:""}</td><td>${c}/${b.items.length}</td></tr>`}).join("")}</table></div>
+<div class="card"><h2>Từng câu (bấm để xem lại)</h2><div class="row" style="gap:6px">${TK.qs.map((q,k)=>`<button class="chip ${TK.ans[k]==null?"":TK.ans[k]===q.a?"ok":"bad"}" data-act="treview" data-n="${k}" aria-label="Câu ${k+1}: ${TK.ans[k]==null?"bỏ trống":TK.ans[k]===q.a?"đúng":"sai"}">${k+1}</button>`).join("")}</div><div class="mute small" style="margin-top:6px">Xanh: đúng · Đỏ: sai · Không màu: bỏ trống</div></div>
+<div class="row"><button class="btn" data-act="treview">Xem lại bài và đáp án</button>${AI&&TK.cor<n?`<button class="btn o" data-act="tex">Viết lời giải bằng AI cho các câu sai</button>`:""}<button class="btn o" data-act="tclose">Đóng</button></div><p class="small mute">Lời giải do AI viết cần được giáo viên đọc lại. Sau khi viết xong, bấm "Xem lại bài và đáp án" để xem.</p>`}
+V.takeStart=takeStart;V.take=take;V.tresult=tresult;
+async function explain(i){if(!AI)return toast("AI chưa sẵn sàng.");if(busy)return;const q=VW.qs[i],pk=VW.rev[i],L="ABCD",cl=s=>String(s).replace(/\*\*|<\/?u>/g,"");busy=1;toast("Claude đang giải thích...");try{const p=`Bạn là giáo viên tiếng Anh THPT. Hãy giải thích bằng tiếng Việt, tối đa 120 từ, vì sao đáp án đúng là ${L[q.a]} và vì sao ${pk==null?"học sinh cần chú ý các đáp án còn lại":"đáp án "+L[pk]+" chưa đúng"}.${q.p?"\n\nĐoạn văn:\n"+cl(q.p):""}\n\nCâu hỏi: ${cl(q.q)}\n${q.o.map((o,k)=>L[k]+". "+cl(o)).join("\n")}\nĐáp án đúng: ${L[q.a]}`;const r=await AI(p,{modelTier:"default",cache:false});EXP[i]=r.text;q.ex=r.text.trim();save()}catch(x){toast(x&&x.code=="not_granted"?"Bạn chưa cho phép trang gọi Claude.":"Không tạo được giải thích, hãy thử lại.")}busy=0;render()}
+let CF={open:0,mode:"xlsx",n:"",g:"12",txt:""},IM=null,DL=null,CX=null;
+const XLS="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+const normPh=v=>{let d=String(v||"").replace(/[^\d+]/g,"");if(/^\d{9}$/.test(d))d="0"+d;return d};
+function hdrMap(row){const M={};row.forEach((h,i)=>{const s=String(h||"").toLowerCase().normalize("NFC").trim();if(!s)return;const ph=/phụ huynh|\bph\b|\bbố\b|\bmẹ\b/.test(s);let k=null;if(ph)return;if(/^mã\b|\bmã (học sinh|hs|số)|student id|^msv?\b|\bmhs\b/.test(s))k="code";else if(/ngày sinh|sinh nhật|dob/.test(s))k="dob";else if(/giới/.test(s))k="gender";else if(/điện thoại|sđt|sdt|phone/.test(s))k=ph?"pphone":"phone";else if(/ghi chú|note/.test(s))k="note";else if(/họ/.test(s)&&/tên/.test(s))k="name";else if(s=="tên"||/^tên học sinh/.test(s))k="name";if(k&&!(k in M))M[k]=i});return M}
+async function readClassFile(){const f=($("cfile")||{}).files&&$("cfile").files[0];if(!f)return toast("Hãy chọn file Excel (.xlsx) trước.");if(f.size>5242880)return toast("File lớn hơn 5 MB.");
+try{if(!window.XLSX)await loadJS(XLS);const wb=XLSX.read(await f.arrayBuffer(),{type:"array",cellDates:true});const ws=wb.Sheets[wb.SheetNames[0]];const A=XLSX.utils.sheet_to_json(ws,{header:1,raw:false,defval:"",dateNF:"dd/mm/yyyy"});
+let hi=-1,M={};for(let i=0;i<Math.min(A.length,10);i++){const m=hdrMap(A[i]);if("name" in m){hi=i;M=m;break}}
+if(hi<0){IM=null;render();return toast('Không tìm thấy cột "Họ và tên HS" ở dòng tiêu đề. Hãy dùng file Excel mẫu.')}
+const rows=[],warn=[],seen=new Set();let dup=0,bad=0,ex=0;
+for(let i=hi+1;i<A.length;i++){const r=A[i],g=k=>k in M?String(r[M[k]]??"").trim():"";const name=g("name").replace(/\s+/g," ");if(!name)continue;if(/^ví dụ/i.test(g("note"))){ex++;continue}
+if(seen.has(name.toLowerCase())){dup++;continue}seen.add(name.toLowerCase());let dob=g("dob");const mi=dob.match(/^(\d{4})-(\d{2})-(\d{2})/);if(mi)dob=mi[3]+"/"+mi[2]+"/"+mi[1];if(dob&&!/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(dob))bad++;
+rows.push({code:g("code"),name,dob,gender:g("gender"),phone:normPh(g("phone")),note:g("note")});if(rows.length>=300){warn.push("Chỉ đọc 300 học sinh đầu tiên.");break}}
+if(ex)warn.push("Đã bỏ qua "+ex+" dòng ví dụ.");if(dup)warn.push("Bỏ "+dup+" dòng trùng họ tên trong file.");if(bad)warn.push(bad+" ngày sinh không đúng dạng dd/mm/yyyy (vẫn giữ nguyên chữ).");
+if(!rows.length){IM=null;render();return toast("File không có học sinh nào dưới dòng tiêu đề.")}
+IM={f:f.name,rows,warn};render()}catch(x){IM=null;render();toast("Không đọc được file. Hãy lưu lại dạng .xlsx rồi thử lại.")}}
+async function dlTemplate(){if(!DL)return toast("Trình duyệt chưa cho tải file từ trang. Hãy dùng file Excel mẫu gửi trong khung chat.");
+try{if(!window.XLSX)await loadJS(XLS);const H=["Mã học sinh (tùy chọn)","Họ và tên HS","Ngày sinh (dd/mm/yyyy)","Giới tính","Số điện thoại","Ghi chú"];const wb=XLSX.utils.book_new();const ws=XLSX.utils.aoa_to_sheet([H,["HS001","Nguyễn Văn An","15/03/2008","Nam","0901234567","Ví dụ: xóa dòng này trước khi tải lên"]]);ws["!cols"]=[22,28,22,12,16,34].map(w=>({wch:w}));XLSX.utils.book_append_sheet(wb,ws,"Danh sách học sinh");
+const G=["HƯỚNG DẪN","1. Điền mỗi học sinh một dòng ở sheet Danh sách học sinh.","2. Dòng 2 chỉ là ví dụ, hãy xóa hoặc ghi đè.","3. Chỉ cột Họ và tên HS là bắt buộc. Cột Mã học sinh có thể để trống.","4. Ngày sinh ghi dd/mm/yyyy. Số điện thoại giữ số 0 đầu.","5. Tối đa 300 học sinh. Họ tên trùng trong một lớp sẽ bị bỏ bớt."];XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(G.map(x=>[x])),"Hướng dẫn");
+await DL.save({filename:"mau-danh-sach-lop.xlsx",data:XLSX.write(wb,{type:"array",bookType:"xlsx"})});toast("Đã lưu file mẫu.")}catch(x){if(!x||x.code!="declined")toast("Không tải được file mẫu, hãy thử lại.")}}
+function saveClass(){const n=CF.n.trim();if(!n)return toast("Hãy nhập tên lớp.");let st=[],info={};
+if(CF.mode=="xlsx"){if(!IM)return toast("Hãy chọn file Excel và bấm Đọc file trước.");IM.rows.forEach(r=>{st.push(r.name);info[r.name]={code:r.code,dob:r.dob,gender:r.gender,phone:r.phone,note:r.note}})}
+else st=[...new Set(CF.txt.split("\n").map(x=>x.trim()).filter(Boolean))];
+S.c.push({id:uid(),n,g:+CF.g,st,info});save();CF={open:0,mode:"xlsx",n:"",g:"12",txt:""};IM=null;toast("Đã thêm lớp "+n+" với "+st.length+" học sinh.");render()}
+function clsForm(){const pv=IM?`<div class="card" style="background:var(--bg);margin-top:10px"><b>${esc(IM.f)}</b>: đọc được ${IM.rows.length} học sinh${IM.warn.map(w=>`<div class="small" style="color:var(--bad)">${esc(w)}</div>`).join("")}<div style="overflow:auto;margin-top:6px"><table><tr><th>STT</th><th>Mã HS</th><th>Họ và tên</th><th>Ngày sinh</th><th>SĐT</th></tr>${IM.rows.slice(0,8).map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.code)}</td><td>${esc(r.name)}</td><td>${esc(r.dob)}</td><td>${esc(r.phone)}</td></tr>`).join("")}</table></div>${IM.rows.length>8?`<div class="small mute">...và ${IM.rows.length-8} học sinh khác</div>`:""}</div>`:"";
+return `<div class="card"><h2>Thêm lớp mới</h2><div class="grid"><div><label for="cn">Tên lớp</label><input id="cn" data-cf="n" value="${esc(CF.n)}" placeholder="Ví dụ: 12A1"></div><div><label for="cg">Khối</label><select id="cg" data-cf="g">${[6,7,8,9,10,11,12].map(g=>`<option ${CF.g==g?"selected":""}>${g}</option>`).join("")}</select></div></div>
+<div class="tabs" style="display:inline-flex;margin-top:12px">${[["xlsx","Tải file Excel"],["manual","Nhập tay"]].map(([k,l])=>`<button data-act="cfmode" data-m="${k}" aria-pressed="${CF.mode==k}">${l}</button>`).join("")}</div>
+${CF.mode=="xlsx"?`<div class="small mute" style="margin:8px 0">Bước 1: tải file mẫu và điền danh sách. Bước 2: chọn file đã điền rồi bấm Đọc file. Bước 3: kiểm tra bảng xem trước rồi bấm Lưu lớp.</div>${DL?'<button class="btn o" data-act="dlTpl">Tải file Excel mẫu</button>':'<div class="small mute">File Excel mẫu được gửi kèm trong khung chat.</div>'}<label for="cfile">Chọn file đã điền (.xlsx)</label><input id="cfile" type="file" accept=".xlsx,.xls,.csv"><div style="margin-top:8px"><button class="btn o" data-act="readCls">Đọc file</button></div>${pv}`:`<label for="cs">Danh sách học sinh (mỗi dòng một tên)</label><textarea id="cs" data-cf="txt">${esc(CF.txt)}</textarea>`}
+<div style="margin-top:12px"><button class="btn" data-act="saveCls">Lưu lớp</button></div></div>`}
+const clsCard=c=>{const st=cStats(c);return `<div class="card"><div class="row sb"><div><b>${esc(c.n)}</b> <span class="tag b">Khối ${c.g}</span><div class="mute small">${c.st.length} học sinh · ${st.A.length} bài đã giao${st.open?" ("+st.open+" đang mở)":""}${st.avg==null?"":" · điểm TB "+st.avg}</div></div><div class="row"><button class="btn s" data-act="copen" data-id="${c.id}">Quản lý lớp</button><button class="btn o s" data-act="xGrades" data-id="${c.id}">Xuất điểm</button><button class="btn d s" data-act="delClass" data-id="${c.id}">Xóa lớp</button></div></div></div>`};
+let AS={sel:null,s:null},AD=null,SD=null;
+const STU="<!DOCTYPE html>\n<html lang=\"vi\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n<title>B-Lingo – Bài thi tiếng Anh<\/title>\n<style>\n:root{--bg:#eef1f8;--card:#fff;--ink:#101a33;--mute:#5f6a88;--line:#e3e7f2;--pri:#1f5bff;--ok:#127a55;--okbg:#e2f6ee;--bad:#b3261e;--badbg:#fdeaea;--warn:#fff4d6}\n@media(prefers-color-scheme:dark){:root{--bg:#0d1224;--card:#171e38;--ink:#eef0f8;--mute:#a0a9c9;--line:#283155;--ok:#5fd6a8;--okbg:#12362b;--bad:#ff8a80;--badbg:#3a1a1a;--warn:#3a3012}}\n*{box-sizing:border-box}html,body{margin:0}\nbody{background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,\"Segoe UI\",Roboto,Arial,sans-serif}\nbutton,input,select{font:inherit;color:inherit}\n:focus-visible{outline:3px solid #ffb800;outline-offset:2px}\n.wrap{max-width:1300px;margin:auto;padding:14px}\n.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:12px}\nh1{font-size:1.4rem;margin:.1rem 0 .4rem}h2{font-size:1.05rem;margin:0 0 .5rem}\n.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.sb{justify-content:space-between}\n.mute{color:var(--mute)}.small{font-size:.86rem}\nlabel{display:block;font-weight:600;font-size:.9rem;margin:.7rem 0 .25rem}\ninput,select{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:.6rem .75rem}\n.btn{background:var(--pri);color:#fff;border:0;border-radius:10px;padding:.6rem 1.2rem;font-weight:600;cursor:pointer}\n.btn.o{background:var(--card);color:var(--ink);border:1px solid var(--line)}\n.btn:disabled{opacity:.5;cursor:not-allowed}\n.opt{display:block;width:100%;text-align:left;background:var(--card);border:1.5px solid var(--line);border-radius:10px;padding:.6rem .8rem;margin:5px 0;cursor:pointer}\n.opt[aria-pressed=true]{border-color:var(--pri);box-shadow:inset 0 0 0 1.5px var(--pri);font-weight:600}\n.chip{min-width:36px;height:36px;border-radius:8px;border:1px solid var(--line);background:var(--card);cursor:pointer;font-weight:600}\n.chip.on{background:var(--pri);color:#fff;border-color:var(--pri)}\n.split{display:grid;grid-template-columns:1fr 1fr;gap:14px;height:calc(100vh - 210px);min-height:340px}.split.one{grid-template-columns:1fr}\n.pane{overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}\n@media(max-width:850px){.split{grid-template-columns:1fr;grid-template-rows:42% 58%;height:calc(100vh - 250px)}.split.one{grid-template-rows:1fr}}\n.tag{font-size:.78rem;padding:.1rem .6rem;border-radius:99px;font-weight:600;background:var(--okbg);color:var(--ok)}.tag.w{background:var(--warn);color:#7a5600}.tag.b{background:var(--badbg);color:var(--bad)}\n.ra{padding:4px 8px;margin:3px 0;border-radius:8px}.ra.ok{background:var(--okbg);color:var(--ok);font-weight:600}.ra.bad{background:var(--badbg);color:var(--bad);font-weight:600}\n.ex{background:var(--warn);color:#4a3600;border-radius:10px;padding:8px 12px;margin:6px 0;font-size:.92rem;white-space:pre-wrap}\ntextarea{width:100%;min-height:90px;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:.6rem;font:13px/1.4 ui-monospace,Menlo,Consolas,monospace;color:var(--ink)}\n<\/style>\n<\/head>\n<body>\n<div class=\"wrap\" id=\"app\"><\/div>\n<script>\nconst D=__DATA__;\nconst esc=s=>String(s==null?\"\":s).replace(/[&<>\"']/g,c=>({\"&\":\"&amp;\",\"<\":\"&lt;\",\">\":\"&gt;\",'\"':\"&quot;\",\"'\":\"&#39;\"}[c]));\nconst fm=s=>esc(s).replace(/\\*\\*([\\s\\S]+?)\\*\\*/g,\"<b>$1<\/b>\").replace(/&lt;u&gt;([\\s\\S]+?)&lt;\\/u&gt;/g,\"<u>$1<\/u>\");\nconst $=id=>document.getElementById(id);\nconst LS={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};\nconst K=D.k?atob(D.k).split(\"\"):null,SET=D.set,N=D.qs.length;\nconst fmt=ms=>{const s=Math.ceil(ms/1000);return Math.floor(s/60)+\":\"+String(s%60).padStart(2,\"0\")};\nconst tk=(n,c)=>\"edmt:\"+D.code+\":\"+(n+\"|\"+c).toLowerCase().replace(/\\s+/g,\" \").trim();\nconst P=\"edmp:\"+D.code,LK=\"edml:\"+D.code;\nlet V=\"intro\",T=null,R=null,TI=null,msg=\"\",F={n:\"\",c:SET.cls||\"\"},onlyBad=false;\nfunction qTxt(q,n){const L=q.q.split(\"\\n\");return \"<b>\"+n+\".<\/b> \"+fm(L[0])+(L.length>1?'<div style=\"white-space:pre-wrap;margin:4px 0 6px 12px\">'+fm(L.slice(1).join(\"\\n\"))+\"<\/div>\":\"\")}\nfunction blocks(qs){const B=[];qs.forEach((q,i)=>{const ml=q.q.includes(\"\\n\"),key=q.p?\"p:\"+q.p:ml?\"m:\"+i:\"\",last=B[B.length-1];if(key&&q.p&&last&&last.key==key)last.items.push({q,n:i+1});else if(!key&&last&&last.key===\"\")last.items.push({q,n:i+1});else B.push({key,left:q.p||(ml?q.q:\"\"),items:[{q,n:i+1}]})});return B}\nconst alone=q=>!q.p&&q.q.includes(\"\\n\");\nfunction win(){const now=Date.now(),o=SET.open?new Date(SET.open).getTime():0,c=SET.close?new Date(SET.close).getTime():0;if(o&&now<o)return\"Bài thi chưa mở. Mở lúc \"+new Date(o).toLocaleString(\"vi-VN\")+\".\";if(c&&now>c)return\"Bài thi đã đóng lúc \"+new Date(c).toLocaleString(\"vi-VN\")+\".\";return\"\"}\nfunction intro(){const w=win(),tries=+SET.tries||0,pg=LS.get(P),last=LS.get(LK)||[];\n const left=F.n.trim()?(tries?Math.max(0,tries-(LS.get(tk(F.n,F.c))||0)):\"không giới hạn\"):\"\";\n return `<div class=\"card\"><h1>${esc(D.title)}<\/h1><div class=\"mute\">${N} câu · ${SET.min} phút · ${tries?\"tối đa \"+tries+\" lần làm\":\"không giới hạn số lần\"}${SET.open?\" · mở \"+new Date(SET.open).toLocaleString(\"vi-VN\"):\"\"}${SET.close?\" · đóng \"+new Date(SET.close).toLocaleString(\"vi-VN\"):\"\"}<\/div>${w?`<div class=\"ex\" style=\"margin-top:12px\">${esc(w)}<\/div>`:\"\"}${msg?`<div class=\"ex\" style=\"background:var(--badbg);color:var(--bad)\">${esc(msg)}<\/div>`:\"\"}\n ${pg&&pg.end>Date.now()?`<div class=\"card\" style=\"background:var(--warn);margin-top:12px\"><b>Bạn có một bài đang làm dở<\/b> (${esc(pg.name)}).<div class=\"row\" style=\"margin-top:8px\"><button class=\"btn\" id=\"resume\">Tiếp tục làm bài<\/button><\/div><\/div>`:\"\"}\n <label for=\"fn\">Họ và tên<\/label><input id=\"fn\" value=\"${esc(F.n)}\" autocomplete=\"name\" placeholder=\"Ví dụ: Nguyễn Văn An\">\n <label for=\"fc\">Lớp<\/label>${SET.cls?`<select id=\"fc\"><option>${esc(SET.cls)}<\/option><\/select>`:`<input id=\"fc\" value=\"${esc(F.c)}\" placeholder=\"Ví dụ: 12A1\">`}\n ${left!==\"\"?`<div class=\"small mute\" style=\"margin-top:6px\">Số lần còn lại của bạn: ${left}<\/div>`:\"\"}\n <div class=\"row\" style=\"margin-top:14px\"><button class=\"btn\" id=\"start\" ${w?\"disabled\":\"\"}>Bắt đầu làm bài<\/button><\/div><\/div>\n ${last.length?`<div class=\"card\"><h2>Mã kết quả đã tạo trên máy này<\/h2><div class=\"small mute\">Nếu chưa gửi cho giáo viên, hãy sao chép và gửi.<\/div><textarea readonly>${esc(last.join(\"\\n\"))}<\/textarea><\/div>`:\"\"}`}\nfunction start(resume){const n=F.n.trim().replace(/\\s+/g,\" \"),c=(F.c||\"\").trim();\n if(!resume){if(n.length<2){msg=\"Hãy nhập họ và tên.\";return render()}if(!c){msg=\"Hãy nhập lớp.\";return render()}const w=win();if(w){msg=w;return render()}const tries=+SET.tries||0;if(tries&&(LS.get(tk(n,c))||0)>=tries){msg=\"Bạn đã hết số lần làm bài này.\";return render()}\n  let end=Date.now()+SET.min*60000;if(SET.close)end=Math.min(end,new Date(SET.close).getTime());T={name:n,cls:c,start:Date.now(),end,ans:Array(N).fill(null),i:0,att:(LS.get(tk(n,c))||0)+1,cf:0};LS.set(P,{name:n,cls:c,start:T.start,end,ans:T.ans,att:T.att})}\n else{const p=LS.get(P);T={name:p.name,cls:p.cls,start:p.start,end:p.end,ans:p.ans,i:0,att:p.att,cf:0}}\n msg=\"\";V=\"take\";clearInterval(TI);TI=setInterval(tick,1000);render()}\nfunction tick(){if(V!=\"take\")return clearInterval(TI);const l=Math.max(0,T.end-Date.now()),el=$(\"tm\");if(el)el.textContent=fmt(l);if(l<=0){alert(\"Hết giờ. Bài của bạn được nộp tự động.\");submit()}}\nconst b64=o=>btoa(unescape(encodeURIComponent(JSON.stringify(o))));\nfunction submit(){clearInterval(TI);const a=T.ans.map(x=>x==null?\"-\":\"ABCD\"[x]).join(\"\"),used=Math.round(Math.min(Date.now()-T.start,SET.min*60000)/1000),at=Date.now();\n const code=\"EDM1.\"+b64({c:D.code,n:T.name,k:T.cls,a,t:used,r:T.att,at});LS.set(tk(T.name,T.cls),T.att);LS.del(P);const l=LS.get(LK)||[];l.push(code);LS.set(LK,l);\n let cor=null;if(K)cor=T.ans.filter((x,i)=>x!=null&&\"ABCD\"[x]===K[i]).length;R={code,cor,ans:T.ans.slice(),used,name:T.name,cls:T.cls};T=null;V=\"done\";render()}\nfunction takeItem(q,n){return `<div style=\"margin-bottom:18px\">${alone(q)?\"<b>\"+n+\".<\/b> Chọn thứ tự sắp xếp đúng:\":qTxt(q,n)}${q.o.map((o,i)=>`<button class=\"opt\" data-n=\"${n-1}\" data-o=\"${i}\" aria-pressed=\"${T.ans[n-1]===i}\"><b>${\"ABCD\"[i]}.<\/b> ${fm(o)}<\/button>`).join(\"\")}<\/div>`}\nfunction take(){const B=blocks(D.qs),un=T.ans.filter(a=>a==null).length;T.i=Math.max(0,Math.min(T.i,B.length-1));const b=B[T.i],lo=b.items[0].n,hi=b.items[b.items.length-1].n;\n return `<div class=\"row sb\" style=\"margin-bottom:8px\"><div><b>${esc(D.title)}<\/b> · ${esc(T.name)}<div class=\"mute small\">Phần ${T.i+1}/${B.length} · Câu ${lo===hi?lo:lo+\"–\"+hi}<\/div><\/div><div class=\"row\"><b id=\"tm\" style=\"font-size:1.4rem\">${fmt(Math.max(0,T.end-Date.now()))}<\/b><button class=\"btn\" id=\"sub\">${T.cf?\"Bấm lại để nộp (\"+un+\" câu chưa làm)\":\"Nộp bài\"}<\/button><\/div><\/div>\n <div class=\"row\" style=\"gap:6px;margin-bottom:8px\">${D.qs.map((q,k)=>`<button class=\"chip ${T.ans[k]!=null?\"on\":\"\"}\" id=\"pc${k}\" data-j=\"${k}\" aria-label=\"Câu ${k+1}\">${k+1}<\/button>`).join(\"\")}<\/div>\n <div class=\"row\" style=\"margin-bottom:8px\"><button class=\"btn o\" data-g=\"-1\" ${T.i?\"\":\"disabled\"}>Phần trước<\/button><button class=\"btn o\" data-g=\"1\" ${T.i<B.length-1?\"\":\"disabled\"}>Phần sau<\/button><\/div>\n <div class=\"split ${b.left?\"\":\"one\"}\">${b.left?`<div class=\"pane\" tabindex=\"0\" aria-label=\"Nội dung bài\"><div class=\"mute small\" style=\"margin-bottom:6px\">Nội dung bài<\/div><div style=\"white-space:pre-wrap\">${fm(b.left)}<\/div><\/div>`:\"\"}<div class=\"pane\" tabindex=\"0\" aria-label=\"Câu hỏi\"><div class=\"mute small\" style=\"margin-bottom:6px\">Câu hỏi<\/div>${b.items.map(x=>takeItem(x.q,x.n)).join(\"\")}<\/div><\/div>`}\nfunction done(){const pct=K?R.cor/N:null,sc=K?Math.round(pct*SET.scale*10)/10:null;\n let h=`<div class=\"card\"><h1>Đã nộp bài<\/h1><div class=\"mute\">${esc(R.name)} · lớp ${esc(R.cls)} · thời gian làm ${fmt(R.used*1000)}<\/div>`;\n if(K)h+=`<div class=\"row\" style=\"margin:12px 0;gap:24px\"><div><div class=\"mute small\">Điểm<\/div><b style=\"font-size:2rem\">${sc}/${SET.scale}<\/b><\/div><div><div class=\"mute small\">Số câu đúng<\/div><b style=\"font-size:2rem\">${R.cor}/${N}<\/b><\/div><div><span class=\"tag ${pct*100>=SET.pass?\"\":\"b\"}\">${pct*100>=SET.pass?\"Đạt\":\"Chưa đạt\"}<\/span><\/div><\/div>`;\n else h+=`<div class=\"ex\" style=\"margin-top:10px\">Giáo viên không hiển thị điểm và đáp án cho bài này. Điểm sẽ có sau khi giáo viên nhận mã kết quả của bạn.<\/div>`;\n h+=`<h2 style=\"margin-top:14px\">Gửi mã kết quả này cho giáo viên<\/h2><div class=\"small mute\">Giáo viên chỉ nhận được bài của bạn khi bạn gửi mã này (qua Zalo, email hoặc cách giáo viên yêu cầu).<\/div><textarea id=\"rc\" readonly>${esc(R.code)}<\/textarea><div class=\"row\" style=\"margin-top:8px\"><button class=\"btn\" id=\"cp\">Sao chép mã<\/button><button class=\"btn o\" id=\"again\">Về trang đầu<\/button><\/div><\/div>`;\n if(K){h+=`<div class=\"card\"><div class=\"row sb\"><h2 style=\"margin:0\">Xem lại bài làm<\/h2><label style=\"margin:0;display:flex;gap:6px;align-items:center;font-weight:500\"><input type=\"checkbox\" id=\"ob\" style=\"width:auto\" ${onlyBad?\"checked\":\"\"}>Chỉ câu sai hoặc bỏ trống<\/label><\/div>`;\n  blocks(D.qs).forEach(b=>{const it=b.items.filter(x=>!onlyBad||R.ans[x.n-1]==null||\"ABCD\"[R.ans[x.n-1]]!==K[x.n-1]);if(!it.length)return;h+=`<hr style=\"border:0;border-top:1px solid var(--line);margin:14px 0\">`+(b.left?`<div class=\"small mute\" style=\"white-space:pre-wrap;margin-bottom:8px\">${fm(b.left)}<\/div>`:\"\");\n   it.forEach(x=>{const q=x.q,ci=\"ABCD\".indexOf(K[x.n-1]),pk=R.ans[x.n-1],ok=pk===ci;h+=`<div style=\"margin:10px 0\">${alone(q)?\"<b>\"+x.n+\".<\/b> Chọn thứ tự sắp xếp đúng:\":qTxt(q,x.n)} <span class=\"tag ${ok?\"\":\"b\"}\">${ok?\"Đúng\":pk==null?\"Bỏ trống\":\"Sai\"}<\/span>${q.o.map((o,i)=>`<div class=\"ra ${i==ci?\"ok\":pk===i?\"bad\":\"\"}\"><b>${\"ABCD\"[i]}.<\/b> ${fm(o)}${i==ci?\" ✓\":\"\"}${pk===i&&i!=ci?\" ✗ bạn chọn\":\"\"}<\/div>`).join(\"\")}${q.ex?`<div class=\"ex\"><b>Giải thích:<\/b> ${esc(q.ex)}<\/div>`:\"\"}<\/div>`})});\n  h+=`<\/div>`}\n return h}\nfunction render(){$(\"app\").innerHTML=V==\"intro\"?intro():V==\"take\"?take():done();\n if(V==\"intro\"){$(\"fn\").oninput=e=>F.n=e.target.value;$(\"fc\").oninput=e=>F.c=e.target.value;$(\"fc\").onchange=e=>F.c=e.target.value;$(\"start\").onclick=()=>start(false);const r=$(\"resume\");if(r)r.onclick=()=>start(true)}\n if(V==\"take\"){document.querySelectorAll(\"[data-o]\").forEach(b=>b.onclick=()=>{const n=+b.dataset.n,o=+b.dataset.o;T.ans[n]=T.ans[n]===o?null:o;T.cf=0;LS.set(P,{name:T.name,cls:T.cls,start:T.start,end:T.end,ans:T.ans,att:T.att});document.querySelectorAll('[data-n=\"'+n+'\"]').forEach(x=>x.setAttribute(\"aria-pressed\",String(+x.dataset.o===T.ans[n])));$(\"pc\"+n).classList.toggle(\"on\",T.ans[n]!=null)});\n  document.querySelectorAll(\"[data-g]\").forEach(b=>b.onclick=()=>{T.i+=+b.dataset.g;render()});document.querySelectorAll(\"[data-j]\").forEach(b=>b.onclick=()=>{T.i=blocks(D.qs).findIndex(x=>x.items.some(y=>y.n-1==+b.dataset.j));render()});\n  $(\"sub\").onclick=()=>{const un=T.ans.filter(a=>a==null).length;if(un&&!T.cf){T.cf=1;return render()}submit()}}\n if(V==\"done\"){$(\"cp\").onclick=()=>{const t=$(\"rc\");t.select();try{navigator.clipboard.writeText(t.value).then(()=>{$(\"cp\").textContent=\"Đã sao chép\"},()=>{$(\"cp\").textContent=\"Hãy nhấn Ctrl+C\"})}catch(e){$(\"cp\").textContent=\"Hãy nhấn Ctrl+C\"}};$(\"again\").onclick=()=>{V=\"intro\";F.n=\"\";R=null;render()};const o=$(\"ob\");if(o)o.onchange=e=>{onlyBad=e.target.checked;render()}}}\nwindow.addEventListener(\"beforeunload\",e=>{if(V==\"take\"){e.preventDefault();e.returnValue=\"\"}});\nrender();\n<\/script>\n<\/body>\n<\/html>\n";
+const SC=a=>(a.set&&a.set.scale)||10;
+const dsc=(a,s)=>String(Math.round((SC(a)==100?s.sc*10:s.sc)*10)/10);
+const aClosed=a=>a.set&&a.set.close?new Date(a.set.close)<new Date():!!(a.due&&a.due<today());
+const aStatus=a=>{if(!a.set)return["Bài cũ","w"];const n=Date.now();if(a.set.open&&new Date(a.set.open)>n)return["Chưa mở","w"];if(a.set.close&&new Date(a.set.close)<n)return["Đã đóng","b"];return["Đang mở",""]};
+const defSet=e=>({title:e.title,cid:"",open:"",close:"",min:String(Math.max(5,Math.round(e.qs.length*1.25))),tries:"1",scale:"10",pass:"50",show:"yes"});
+const mkCode=()=>{const A="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";let c="";for(let i=0;i<6;i++)c+=A[Math.floor(Math.random()*A.length)];return S.a.some(a=>a.code==c)?mkCode():c};
+const clTxt=t=>String(t).replace(/\*\*|<\/?u>/g,"");
+const fmtDT=v=>v?new Date(v).toLocaleString("vi-VN"):"không đặt";
+function createAssign(){const e=ex(AS.sel);if(!e)return toast("Hãy chọn một đề.");const s=AS.s,min=Math.max(0,Math.min(300,Math.round(+s.min||0)));if(!min)return toast("Hãy nhập thời gian làm bài (số phút).");if(s.open&&s.close&&new Date(s.close)<=new Date(s.open))return toast("Giờ đóng phải sau giờ mở.");
+ const a={id:uid(),eid:e.id,cid:s.cid||"",due:"",code:mkCode(),title:(s.title||"").trim()||e.title,set:{min,open:s.open,close:s.close,tries:s.tries,scale:+s.scale==100?100:10,pass:Math.max(0,Math.min(100,+s.pass||0)),show:s.show},subs:[],at:Date.now()};S.a.push(a);save();AS={sel:null,s:null};AD=a.id;toast("Đã tạo bài giao. Mã bài: "+a.code);go("asgd")}
+async function exportAssign(){const a=S.a.find(x=>x.id==AD),e=a&&ex(a.eid);if(!e||!a.set)return toast("Bài này không có cài đặt để xuất file.");if(!DL)return toast("Trình duyệt chưa cho tải file từ trang.");
+ const show=a.set.show!="no",c=cls(a.cid);const d={v:1,code:a.code,title:a.title||e.title,set:{min:a.set.min,open:a.set.open,close:a.set.close,tries:a.set.tries,scale:a.set.scale,pass:a.set.pass,cls:c?c.n:""},qs:e.qs.map(q=>{const o={p:q.p||"",q:q.q,o:q.o};if(show)o.ex=q.ex||"";return o}),k:show?btoa(e.qs.map(q=>"ABCD"[q.a]).join("")):""};
+ try{await DL.save({filename:"bai-thi-"+a.code+".html",data:STU.replace("__DATA__",()=>JSON.stringify(d).replace(/</g,"\\u003c"))});toast("Đã lưu file bài thi.")}catch(x){if(!x||x.code!="declined")toast("Không lưu được file, hãy thử lại.")}}
+function importCodes(){const a=S.a.find(x=>x.id==AD),e=a&&ex(a.eid);if(!e)return toast("Đề của bài này đã bị xóa.");const L=val("icode").split(/\s+/).map(x=>x.trim()).filter(Boolean);if(!L.length)return toast("Hãy dán ít nhất một mã kết quả.");let ok=0,dup=0,bad=0,other=0;
+ for(const c of L){try{if(!c.startsWith("EDM1."))throw 0;const d=JSON.parse(decodeURIComponent(escape(atob(c.slice(5)))));if(d.c!==a.code){other++;continue}if(typeof d.a!="string"||d.a.length!=e.qs.length||!/^[A-D-]+$/.test(d.a)||typeof d.n!="string"||!d.n.trim())throw 0;
+  if(a.subs.some(s=>s.at===d.at&&s.name===d.n.trim().slice(0,80)&&s.attempt===d.r)){dup++;continue}
+  const ans=[...d.a].map(ch=>ch=="-"?null:"ABCD".indexOf(ch)),n=e.qs.length,cor=ans.filter((x,i)=>x===e.qs[i].a).length;
+  a.subs.push({name:d.n.trim().slice(0,80),cls:String(d.k||"").trim().slice(0,40),sc:Math.round(cor/n*100)/10,cor,n,ans,used:Math.max(0,Math.min(36000,+d.t||0)),at:+d.at||Date.now(),attempt:+d.r||1,seen:0,imp:1});ok++}catch(x){bad++}}
+ save();render();toast(`Đã nhập ${ok} bài.`+(dup?` Bỏ ${dup} mã trùng.`:"")+(other?` ${other} mã thuộc bài khác.`:"")+(bad?` ${bad} mã không hợp lệ.`:""),9000)}
+async function genExplain(eid,only){const e=typeof eid=="object"?eid:ex(eid);if(!e)return;if(!AI)return toast("AI chưa sẵn sàng.");if(busy)return;busy=1;const B=blocks(e.qs);let done=0,fail=0,stop="";
+ try{for(let k=0;k<B.length;k++){const b=B[k],todo=b.items.filter(x=>!x.q.ex&&(!only||only.includes(x.n-1)));if(!todo.length)continue;toast(`Claude đang viết giải thích ${k+1}/${B.length}...`);
+  const p=`Bạn là giáo viên tiếng Anh THPT. Viết giải thích NGẮN bằng tiếng Việt (tối đa 50 từ mỗi câu) cho từng câu trắc nghiệm dưới đây: nêu vì sao đáp án đúng là đáp án đó và kiến thức hoặc cấu trúc liên quan. Chỉ dựa vào đáp án đúng đã cho, không đổi đáp án. Chỉ trả về JSON thuần (không markdown) dạng [{"n":số câu,"ex":"..."}].${b.left?"\n\nNội dung bài:\n"+clTxt(b.left).slice(0,3500):""}\n\n`+todo.map(x=>`Câu ${x.n}: ${clTxt(x.q.q)}\n`+x.q.o.map((o,i)=>"ABCD"[i]+". "+clTxt(o)).join("\n")+`\nĐáp án đúng: ${"ABCD"[x.q.a]}`).join("\n\n");
+  try{const r=await AI(p,{modelTier:"default",cache:false});const j=JSON.parse(r.text.replace(/```json|```/g,"").trim());let c=0;j.forEach(y=>{const q=todo.find(x=>x.n===y.n);if(q&&typeof y.ex=="string"&&y.ex.trim()){q.q.ex=y.ex.trim().slice(0,600);c++}});done+=c;if(c<todo.length)fail++;save()}catch(x){if(x&&(x.code=="not_granted"||x.code=="rate_limited")){stop=x.code;break}fail++}}}
+ finally{busy=0}render();toast(stop=="not_granted"?"Bạn chưa cho phép trang gọi Claude.":stop=="rate_limited"?`Đang quá giới hạn, đã viết ${done} giải thích, hãy thử lại sau ít phút.`:`Đã viết giải thích cho ${done} câu.`+(fail?` ${fail} phần chưa xong, bấm lại để tiếp tục.`:"")+" Giáo viên nên đọc lại.",10000)}
+async function aiFeedback(){const a=S.a.find(x=>x.id==SD.aid),e=a&&ex(a.eid),s=a&&a.subs[SD.i];if(!s||!e)return;if(!AI)return toast("AI chưa sẵn sàng.");if(busy)return;busy=1;toast("Claude đang viết nhận xét...");
+ try{const L="ABCD",cl=t=>clTxt(t).replace(/\s+/g," ").trim(),B=blocks(e.qs);const secs=B.map((b,k)=>`Phần ${k+1} (câu ${b.items[0].n}-${b.items[b.items.length-1].n}): ${b.items.filter(x=>s.ans[x.n-1]===x.q.a).length}/${b.items.length}`).join("; ");
+  const wr=e.qs.map((q,i)=>({q,i})).filter(x=>s.ans[x.i]!==x.q.a).slice(0,15).map(x=>`Câu ${x.i+1}: ${cl(x.q.q).slice(0,160)} | Đúng: ${L[x.q.a]}. ${cl(x.q.o[x.q.a]).slice(0,80)} | Học sinh chọn: ${s.ans[x.i]==null?"bỏ trống":L[s.ans[x.i]]+". "+cl(x.q.o[s.ans[x.i]]).slice(0,80)}`).join("\n");
+  const p=`Bạn là giáo viên tiếng Anh THPT Việt Nam. Hãy viết nhận xét cá nhân hóa bằng tiếng Việt cho học sinh sau khi làm bài, giọng thân thiện và khích lệ, tối đa 220 từ, không thêm thông tin ngoài dữ liệu dưới đây. Cấu trúc: 1) Nhận xét chung; 2) Điểm mạnh; 3) Kiến thức cần ôn (dựa trên các câu sai); 4) Ba việc cụ thể nên làm trong tuần tới.\n\nHọc sinh: ${s.name}${s.cls?" (lớp "+s.cls+")":""}\nĐề: ${a.title||e.title}\nKết quả: ${s.cor}/${s.n} câu đúng, điểm ${dsc(a,s)}/${SC(a)}\nTheo phần: ${secs}\nCác câu sai hoặc bỏ trống:\n${wr||"(không có)"}`;
+  const r=await AI(p,{modelTier:"default",cache:false});s.fb=r.text.trim();save()}catch(x){toast(x&&x.code=="not_granted"?"Bạn chưa cho phép trang gọi Claude.":x&&x.code=="rate_limited"?"Đang quá giới hạn, hãy thử lại sau ít phút.":"Không tạo được nhận xét, hãy thử lại.")}busy=0;render()}
+const fmtSec=t=>t?Math.floor(t/60)+" phút "+(t%60)+" giây":"–";
+function assignV(){const e=AS.sel&&ex(AS.sel),s=AS.s;
+ const list=S.e.length?S.e.map(x=>`<button class="opt" data-act="asel" data-id="${x.id}" aria-pressed="${AS.sel==x.id}"><b>${esc(x.title)}</b><div class="mute small">${x.qs.length} câu${x.src=="ai"?" · AI tạo":x.src=="scan"?" · số hóa từ file":""}</div></button>`).join(""):'<div class="card empty">Kho đề đang trống.<br><br><button class="btn" data-go="create">Tạo đề</button></div>';
+ const chk=e?e.qs.filter(q=>q.chk).length:0,noex=e?e.qs.filter(q=>!q.ex).length:0;
+ const form=e?`${chk?`<div class="card" style="background:var(--warn);padding:10px;margin-bottom:10px"><span class="small">Đề có ${chk} câu gắn nhãn "cần kiểm tra đáp án". Hãy xem lại trước khi giao.</span></div>`:""}
+ <label for="as_t">Tên bài giao</label><input id="as_t" data-as="title" value="${esc(s.title)}">
+ <label for="as_c">Lớp (tùy chọn)</label><select id="as_c" data-as="cid"><option value="">Không chọn, học sinh tự nhập lớp</option>${S.c.map(c=>`<option value="${c.id}" ${s.cid==c.id?"selected":""}>${esc(c.n)}</option>`).join("")}</select>
+ <div class="grid"><div><label for="as_o">Mở lúc</label><input id="as_o" type="datetime-local" data-as="open" value="${esc(s.open)}"></div><div><label for="as_x">Đóng lúc</label><input id="as_x" type="datetime-local" data-as="close" value="${esc(s.close)}"></div></div>
+ <div class="mute small">Để trống nếu không giới hạn giờ mở hoặc đóng. Giờ lấy theo đồng hồ máy của học sinh.</div>
+ <div class="grid"><div><label for="as_m">Thời gian làm bài (phút)</label><input id="as_m" type="number" min="1" max="300" data-as="min" value="${esc(s.min)}"></div><div><label for="as_n">Số lần được làm</label><select id="as_n" data-as="tries">${[["1","1 lần"],["2","2 lần"],["3","3 lần"],["5","5 lần"],["0","Không giới hạn"]].map(([v,l])=>`<option value="${v}" ${s.tries==v?"selected":""}>${l}</option>`).join("")}</select></div></div>
+ <div class="grid"><div><label for="as_s">Thang điểm</label><select id="as_s" data-as="scale"><option value="10" ${s.scale=="10"?"selected":""}>Thang 10</option><option value="100" ${s.scale=="100"?"selected":""}>Thang 100</option></select></div><div><label for="as_p">Đạt từ (% số câu đúng)</label><input id="as_p" type="number" min="0" max="100" data-as="pass" value="${esc(s.pass)}"></div></div>
+ <label for="as_h">Sau khi nộp bài, học sinh</label><select id="as_h" data-as="show"><option value="yes" ${s.show=="yes"?"selected":""}>Xem điểm, đáp án và giải thích</option><option value="no" ${s.show=="no"?"selected":""}>Không xem gì (giáo viên chấm khi nhận mã)</option></select>
+ ${s.show=="yes"&&noex?`<div class="small mute" style="margin-top:6px">${noex}/${e.qs.length} câu chưa có giải thích. Sau khi tạo bài, bấm "Viết giải thích bằng AI" để học sinh thấy giải thích khi xem lại.</div>`:""}
+ <div style="margin-top:14px"><button class="btn" data-act="mkAsg">Tạo bài giao</button></div>`:'<div class="empty">Chọn một đề ở bên trái để cài đặt bài thi.</div>';
+ const AL=S.a.length?[...S.a].reverse().map(a=>{const st=aStatus(a),t=ex(a.eid),c=cls(a.cid);return `<div class="card"><div class="row sb"><div><b>${esc(a.title||(t&&t.title)||"(đề đã xóa)")}</b> <span class="tag ${st[1]}">${st[0]}</span><div class="mute small">${a.code?"Mã bài: <b>"+a.code+"</b> · ":""}Đã nộp ${a.subs.length}${c?"/"+c.st.length:""}${a.set?" · "+a.set.min+" phút":""}</div></div><div class="row"><button class="btn s" data-act="aopen" data-id="${a.id}">Xem kết quả</button><button class="btn d s" data-act="delA" data-id="${a.id}">Xóa</button></div></div></div>`}).join(""):'<div class="card empty">Chưa có bài nào được giao.</div>';
+ return `<h1>Giao bài cho lớp</h1><div class="split2"><div><h2>1. Chọn đề</h2>${list}</div><div class="card"><h2>2. Cài đặt bài thi</h2>${form}</div></div><h2>Bài đã giao (${S.a.length})</h2>${AL}`}
+function asgdV(){const a=S.a.find(x=>x.id==AD);if(!a){return '<div class="card empty">Không tìm thấy bài giao.<br><br><button class="btn" data-go="assign">Quay lại</button></div>'}const e=ex(a.eid),c=cls(a.cid),st=aStatus(a),su=a.subs,n=e?e.qs.length:0;
+ const avg=su.length?su.reduce((x,s)=>x+s.sc,0)/su.length:0,mx=su.length?Math.max(...su.map(s=>s.sc)):0,pass=a.set?su.filter(s=>s.cor/s.n*100>=a.set.pass).length:0;
+ const rate=e?e.qs.map((q,i)=>{const t=su.filter(s=>s.ans&&s.ans.length==n);const r=t.length?t.filter(s=>s.ans[i]===q.a).length/t.length:null;return{i,r}}):[];
+ const guide=a.set?`Thầy/cô gửi học sinh file "bai-thi-${a.code}.html". Học sinh mở file bằng trình duyệt (Chrome, Safari...), nhập họ tên và lớp, làm bài rồi nộp. Sau khi nộp, học sinh sao chép "mã kết quả" và gửi lại cho thầy/cô.`:"";
+ return `<div class="row sb"><div><h1>${esc(a.title||(e&&e.title)||"")}</h1><div class="mute small">${a.code?"Mã bài: <b>"+a.code+"</b> · ":""}<span class="tag ${st[1]}">${st[0]}</span>${a.set?` · ${a.set.min} phút · ${+a.set.tries?a.set.tries+" lần":"không giới hạn lần"} · thang ${a.set.scale} · đạt từ ${a.set.pass}% · mở: ${fmtDT(a.set.open)} · đóng: ${fmtDT(a.set.close)}`:""}</div></div><button class="btn o" data-act="asgback">Quay lại</button></div>
+ ${a.set&&e?`<div class="card"><h2>Gửi bài cho học sinh</h2><div class="row"><button class="btn" data-act="expA">Xuất file bài thi</button><button class="btn o" data-act="genEx" ${AI?"":"disabled"}>Viết giải thích bằng AI (${e.qs.filter(q=>!q.ex).length} câu chưa có)</button>${c&&c.st.length?`<button class="btn o" data-act="topenA" data-id="${a.id}">Cho học sinh làm tại máy này</button>`:""}</div><div class="small mute" style="margin-top:8px">${esc(guide)}</div><textarea id="gd" readonly style="margin-top:8px;min-height:70px">${esc(guide)}</textarea><button class="btn o s" data-act="cpGd" style="margin-top:6px">Sao chép hướng dẫn</button>
+ <div class="small mute" style="margin-top:8px">Bài thi được gửi cho học sinh dưới dạng file; bạn cũng có thể đưa file lên nơi lưu trang web để có đường link.</div></div>
+ <div class="card"><h2>Nhập kết quả của học sinh</h2><div class="small mute">Dán mã kết quả học sinh gửi (mỗi mã một dòng, bắt đầu bằng EDM1.).</div><textarea id="icode"></textarea><div style="margin-top:8px"><button class="btn" data-act="impC">Nhập kết quả</button></div></div>`:""}
+ <div class="grid" style="margin:12px 0"><div class="card stat"><span>Đã nộp</span><b>${su.length}</b></div><div class="card stat"><span>Điểm trung bình</span><b>${su.length?Math.round((SC(a)==100?avg*10:avg)*10)/10:"–"}</b></div><div class="card stat"><span>Điểm cao nhất</span><b>${su.length?Math.round((SC(a)==100?mx*10:mx)*10)/10:"–"}</b></div>${a.set?`<div class="card stat"><span>Số bài đạt</span><b>${su.length?pass+"/"+su.length:"–"}</b></div>`:""}</div>
+ <div class="card"><h2>Bài nộp</h2>${su.length?`<div style="overflow:auto"><table><tr><th>Họ tên</th><th>Lớp</th><th>Lần</th><th>Điểm</th><th>Đúng</th><th>Thời gian</th><th></th></tr>${su.map((s,i)=>({s,i})).sort((x,y)=>y.s.at-x.s.at).map(({s,i})=>`<tr><td>${esc(s.name)}${s.sim?' <span class="tag w">giả lập</span>':""}${s.fb?" ✦":""}</td><td>${esc(s.cls||(c&&c.n)||"")}</td><td>${s.attempt||1}</td><td><b>${dsc(a,s)}</b></td><td>${s.cor!=null?s.cor+"/"+s.n:"–"}</td><td>${fmtSec(s.used)}</td><td>${s.ans&&e&&s.ans.length==n?`<button class="btn s" data-act="subOpen" data-i="${i}">Xem chi tiết</button>`:""}</td></tr>`).join("")}</table></div><div class="small mute" style="margin-top:6px">✦ đã có nhận xét AI</div>`:'<div class="empty">Chưa có bài nộp. Nhập mã kết quả của học sinh ở phía trên.</div>'}</div>
+ ${rate.some(x=>x.r!=null)?`<div class="card"><h2>Tỷ lệ làm đúng từng câu</h2><div class="row" style="gap:6px">${rate.map(x=>x.r==null?"":`<button class="chip ${x.r<.5?"bad":x.r>=.8?"ok":""}" data-act="rq" data-i="${x.i}" title="Câu ${x.i+1}: ${Math.round(x.r*100)}% đúng" aria-label="Câu ${x.i+1}: ${Math.round(x.r*100)}% đúng">${x.i+1}</button>`).join("")}</div><div class="small mute" style="margin-top:6px">Đỏ: dưới 50% làm đúng · Xanh: từ 80% trở lên. Di chuột lên số câu để xem tỷ lệ.</div></div>`:""}`}
+function subdV(){const a=S.a.find(x=>x.id==SD.aid),e=a&&ex(a.eid),s=a&&a.subs[SD.i];if(!s||!e)return '<div class="card empty">Không tìm thấy bài nộp.<br><br><button class="btn" data-go="assign">Quay lại</button></div>';const B=blocks(e.qs),pct=s.cor/s.n*100;
+ return `<div class="row sb"><div><h1>${esc(s.name)}</h1><div class="mute small">${esc(s.cls||"")} · ${esc(a.title||e.title)} · lần ${s.attempt||1} · ${fmtSec(s.used)}</div></div><button class="btn o" data-act="subBack">Quay lại</button></div>
+ <div class="grid" style="margin:12px 0"><div class="card stat"><span>Điểm</span><b>${dsc(a,s)}/${SC(a)}</b></div><div class="card stat"><span>Số câu đúng</span><b>${s.cor}/${s.n}</b></div>${a.set?`<div class="card stat"><span>Kết quả</span><b style="font-size:1.4rem">${pct>=a.set.pass?"Đạt":"Chưa đạt"}</b></div>`:""}</div>
+ <div class="card"><h2>Từng câu</h2><div class="row" style="gap:6px">${e.qs.map((q,k)=>`<button class="chip ${s.ans[k]==null?"":s.ans[k]===q.a?"ok":"bad"}" data-act="subQ" data-i="${k}" aria-label="Câu ${k+1}: ${s.ans[k]==null?"bỏ trống":s.ans[k]===q.a?"đúng":"sai"}">${k+1}</button>`).join("")}</div><div class="small mute" style="margin-top:6px">Xanh: đúng · Đỏ: sai · Không màu: bỏ trống. Bấm vào số câu để xem đáp án và giải thích.</div><div style="margin-top:10px"><button class="btn" data-act="subQ">Xem chi tiết câu đúng, câu sai và giải thích</button></div></div>
+ <div class="card"><h2>Theo từng phần</h2><table><tr><th>Phần</th><th>Câu</th><th>Đúng</th></tr>${B.map((b,k)=>`<tr><td>${k+1}</td><td>${b.items[0].n}${b.items.length>1?"–"+b.items[b.items.length-1].n:""}</td><td>${b.items.filter(x=>s.ans[x.n-1]===x.q.a).length}/${b.items.length}</td></tr>`).join("")}</table></div>
+ <div class="card"><div class="row sb"><h2 style="margin:0">Nhận xét cá nhân hóa bằng AI</h2><button class="btn ${s.fb?"o":""}" data-act="aiFb" ${AI?"":"disabled"}>${s.fb?"Viết lại":"Viết nhận xét"}</button></div>${s.fb?`<div style="white-space:pre-wrap;margin-top:10px">${esc(s.fb)}</div><div class="small mute" style="margin-top:6px">Do AI viết dựa trên kết quả bài làm. Giáo viên nên đọc lại trước khi gửi học sinh.</div><textarea id="fbt" readonly style="margin-top:8px">${esc(s.fb)}</textarea><button class="btn o s" data-act="cpFb" style="margin-top:6px">Sao chép nhận xét</button>`:'<div class="mute small" style="margin-top:8px">Claude đọc kết quả của học sinh này (điểm, phần yếu, các câu sai) rồi viết nhận xét và gợi ý ôn tập bằng tiếng Việt.</div>'}</div>
+ <button class="btn d s" data-act="subDel">Xóa bài nộp này</button>`}
+V.asgd=asgdV;V.subd=subdV;
+/* ===== Giám khảo Speaking ===== */
+const SRC=window.SpeechRecognition||window.webkitSpeechRecognition;
+let SP={ph:"setup",cfg:{part:"full",topic:"",lv:"B1",n:"4",stu:"",cid:""},qs:[],i:0,ans:[],cur:"",fin:"",sec:0,t0:0,want:0,mic:0,tts:1,qt0:0,prep:0,fb:null,err:"",id:"",rec:null,tm:null,rs:0,intro:""};
+const PARTN={"1":"Part 1 – Hỏi đáp quen thuộc","2":"Part 2 – Nói dài theo thẻ gợi ý","3":"Part 3 – Thảo luận mở rộng","full":"Đủ 3 phần (1 → 2 → 3)"};
+const mmss=s=>Math.floor(s/60)+":"+String(Math.floor(s%60)).padStart(2,"0");
+const wc=t=>(String(t||"").match(/[A-Za-z0-9'’-]+/g)||[]).length;
+const pj=t=>{const a=t.indexOf("{"),b=t.lastIndexOf("}");if(a<0||b<a)throw 0;return JSON.parse(t.slice(a,b+1))};
+const aiErr=x=>x&&x.code=="not_granted"?"Bạn chưa cho phép trang gọi Claude.":x&&x.code=="rate_limited"?"Đang quá giới hạn, hãy thử lại sau ít phút.":"AI chưa trả lời được, hãy thử lại.";
+function spSay(t){try{if(!SP.tts||!window.speechSynthesis)return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang="en-GB";u.rate=.95;speechSynthesis.speak(u)}catch(e){}}
+function spRecStop(){SP.want=0;if(SP.t0){SP.sec+=(Date.now()-SP.t0)/1000;SP.t0=0}const r=SP.rec;SP.rec=null;try{r&&r.stop()}catch(e){}}
+function spLeave(){spRecStop();try{window.speechSynthesis&&speechSynthesis.cancel()}catch(e){}clearInterval(SP.tm)}
+function spRecStart(){
+ if(!SRC)return toast("Trình duyệt này không hỗ trợ nhận giọng nói. Hãy gõ câu trả lời (Chrome/Edge thường dùng được).",7000);
+ try{speechSynthesis.cancel()}catch(e){}
+ let r;try{r=new SRC()}catch(e){return toast("Không khởi tạo được micro. Hãy gõ câu trả lời.")}
+ r.lang="en-US";r.continuous=true;r.interimResults=true;SP.fin=SP.cur?SP.cur.trim()+" ":"";SP.rs=0;
+ r.onresult=ev=>{let it="";for(let i=ev.resultIndex;i<ev.results.length;i++){const x=ev.results[i];if(x.isFinal)SP.fin+=x[0].transcript.trim()+" ";else it+=x[0].transcript}
+  SP.cur=(SP.fin+it).trim();const t=$("sp_ans");if(t){t.value=SP.cur;t.scrollTop=t.scrollHeight}};
+ r.onerror=ev=>{if(SP.rec!==r)return;if(["not-allowed","service-not-allowed","network","audio-capture"].includes(ev.error)){spRecStop();toast(ev.error=="network"?"Mất kết nối nhận giọng nói. Hãy gõ câu trả lời hoặc thử lại.":"Không bật được micro (chưa cấp quyền hoặc khung trang chặn micro). Hãy gõ câu trả lời.",8000);render()}};
+ r.onend=()=>{if(SP.rec===r&&SP.want){if(++SP.rs>40){spRecStop();return render()}try{r.start()}catch(e){spRecStop();render()}}};
+ SP.rec=r;SP.want=1;SP.t0=Date.now();SP.mic=1;
+ try{r.start()}catch(e){spRecStop();return toast("Không bật được micro.")}
+ render();
+}
+function spTick(){clearInterval(SP.tm);SP.tm=setInterval(()=>{const e=$("sp_tm");if(!e||SP.ph!="ask"||view!="tutor"){clearInterval(SP.tm);return}
+ const s=Math.floor((Date.now()-SP.qt0)/1000);
+ if(SP.prep){const l=60-s;if(l<=0){SP.prep=0;SP.qt0=Date.now();spSay("Please start speaking now.");render();return}e.textContent="Chuẩn bị: "+l+" giây"}
+ else e.textContent="Thời gian: "+mmss(s)},1000)}
+function spAsk(pre){
+ const q=SP.qs[SP.i];SP.cur="";SP.fin="";SP.sec=0;SP.t0=0;SP.mic=0;SP.qt0=Date.now();SP.prep=q.cue?1:0;
+ render();spTick();
+ spSay((pre||"")+(q.cue?"Now, I'd like you to talk about a topic for one to two minutes. You have one minute to prepare. ":"")+q.q)
+}
+function spGo(){spStart({part:val("sp_part")||"full",topic:val("sp_topic").trim(),lv:val("sp_lv")||"B1",n:val("sp_n")||"4",stu:val("sp_stu").trim(),cid:val("sp_cls")})}
+async function spStart(c){
+ if(!AI)return toast("Chưa kết nối được AI. Hãy cho phép trang gọi Claude khi được hỏi.");
+ SP.cfg=c;const n=Math.min(8,Math.max(2,+c.n||4));
+ const st={"1":`${n} câu Part 1 (câu hỏi ngắn về cuộc sống quen thuộc)`,"2":`1 thẻ Part 2 (part=2, "cue" là mảng 4 dòng: "You should say:" và 3 ý gợi ý)`,"3":`${n} câu Part 3 (câu hỏi trừu tượng, đòi hỏi giải thích, so sánh, dự đoán)`,"full":`3 câu Part 1, 1 thẻ Part 2 (part=2, "cue" là mảng 4 dòng: "You should say:" và 3 ý gợi ý), 3 câu Part 3`}[c.part]||"";
+ const p=`Bạn là giám khảo Speaking. Tạo bộ câu hỏi luyện nói tiếng Anh cho học sinh THPT Việt Nam, trình độ ${c.lv} (CEFR).
+Chủ đề: ${c.topic||"tự chọn chủ đề gần gũi với học sinh THPT"}.
+Cấu trúc: ${st}.
+Câu hỏi bằng tiếng Anh, ngôn ngữ vừa trình độ, không trùng ý nhau. Part 3 phải liên quan đến chủ đề của Part 2 nếu có.
+Chỉ trả về JSON, không giải thích: {"intro":"lời mở đầu ngắn của giám khảo bằng tiếng Anh","qs":[{"part":1,"q":"..."},{"part":2,"q":"Describe ...","cue":["You should say:","...","...","..."]}]}`;
+ SP.ph="gen";SP.err="";render();
+ try{const r=await AI(p,{modelTier:"default",cache:false});const j=pj(r.text);
+  const qs=(j.qs||[]).filter(x=>x&&typeof x.q=="string"&&x.q.trim()).map(x=>({part:+x.part||1,q:x.q.trim(),cue:Array.isArray(x.cue)&&x.cue.length?x.cue.map(String):null}));
+  if(!qs.length)throw 0;
+  SP.qs=qs;SP.i=0;SP.ans=[];SP.fb=null;SP.id="";SP.intro=String(j.intro||"Good afternoon. Let's begin the speaking test.").slice(0,300);SP.ph="ask";
+  spAsk(SP.intro+" ")
+ }catch(x){SP.ph="setup";toast(aiErr(x));render()}
+}
+function spNext(skip){
+ spRecStop();const q=SP.qs[SP.i],t=skip?"":SP.cur.trim();
+ SP.ans.push({part:q.part,q:q.q,cue:q.cue,t,words:wc(t),sec:Math.round(SP.sec),mic:SP.mic?1:0});
+ if(SP.i+1<SP.qs.length){SP.i++;return spAsk("Thank you. ")}
+ try{speechSynthesis.cancel()}catch(e){}
+ spSaveRec();spEval()
+}
+function spSaveRec(){
+ S.sp=S.sp||[];let r=S.sp.find(x=>x.id==SP.id);
+ if(!r){SP.id=uid();r={id:SP.id,at:Date.now()};S.sp.push(r)}
+ r.cfg=SP.cfg;r.ans=SP.ans;r.fb=SP.fb;if(S.sp.length>40)S.sp=S.sp.slice(-40);save()
+}
+async function spEval(){
+ SP.ph="eval";SP.err="";render();
+ const items=SP.ans.map((a,i)=>`#${i+1} [Part ${a.part}] Question: ${a.q}\nAnswer (${a.words} words${a.mic?`, spoken ${a.sec}s`:", typed"}): ${a.t||"(no answer)"}`).join("\n\n");
+ let fb=null,err="";
+ for(let k=0;k<2&&!fb;k++){
+  const p=`Bạn là giám khảo IELTS Speaking có kinh nghiệm, chấm cho học sinh THPT Việt Nam trình độ ${SP.cfg.lv}.
+Dưới đây là các câu trả lời đã chuyển thành chữ.
+Quy tắc chấm:
+- Chấm 3 tiêu chí: fluency (Fluency & Coherence), lexical (Lexical Resource), grammar (Grammatical Range & Accuracy). Thang 0–9, bước 0.5, hiệu chỉnh theo học sinh phổ thông Việt Nam (B1 thường 4–5.5, B2 5.5–6.5).
+- KHÔNG chấm phát âm (bạn chỉ nhận chữ, không nghe được giọng).
+- Văn bản có thể do nhận dạng giọng nói nên thiếu dấu câu/viết hoa hoặc sai từ; đừng trừ điểm vì dấu câu, đừng trách từ lạ có thể do nhận dạng sai.
+- Câu không trả lời hoặc quá ngắn: điểm thấp. Không bịa nội dung học sinh không nói.
+- Nhận xét viết bằng tiếng Việt; chỉ trích dẫn tiếng Anh khi cần.
+- Mỗi câu: tối đa 2 mục "fixes" (said = trích đúng điều học sinh nói; better = cách nói tốt hơn; why = lý do ngắn), "model" = câu trả lời mẫu tiếng Anh dưới 50 từ đúng trình độ.${k?"\n- BẮT BUỘC RẤT NGẮN GỌN.":""}
+${items}
+Chỉ trả về JSON: {"band":{"fluency":0,"lexical":0,"grammar":0},"summary":"2-3 câu","strengths":["..."],"improve":["..."],"answers":[{"comment":"1-2 câu","fixes":[{"said":"","better":"","why":""}],"model":""}]}  (mảng answers đúng ${SP.ans.length} phần tử, theo thứ tự).`;
+  try{const r=await AI(p,{modelTier:"default",cache:false});if(r.truncated)throw{code:"long"};const j=pj(r.text);const b=j.band||{};
+   const g=v=>Math.min(9,Math.max(0,Math.round((+v||0)*2)/2));
+   fb={band:{fluency:g(b.fluency),lexical:g(b.lexical),grammar:g(b.grammar)},summary:String(j.summary||"").slice(0,600),strengths:(j.strengths||[]).slice(0,5).map(String),improve:(j.improve||[]).slice(0,5).map(String),
+    answers:SP.ans.map((_,i)=>{const a=(j.answers||[])[i]||{};return{comment:String(a.comment||"").slice(0,400),fixes:(a.fixes||[]).slice(0,2).map(f=>({said:String(f.said||""),better:String(f.better||""),why:String(f.why||"")})),model:String(a.model||"").slice(0,500)}})};
+   const v=Object.values(fb.band);fb.overall=Math.round(v.reduce((x,y)=>x+y,0)/v.length*2)/2;
+  }catch(x){err=aiErr(x);if(x&&(x.code=="not_granted"||x.code=="rate_limited"))break}
+ }
+ SP.fb=fb;SP.err=fb?"":err;spSaveRec();SP.ph="done";render()
+}
+function spReport(){
+ const f=SP.fb,c=SP.cfg;let t=`BÁO CÁO LUYỆN NÓI – ${PARTN[c.part]||""}\nHọc sinh: ${c.stu||"-"}${cls(c.cid)?" · Lớp "+cls(c.cid).n:""}\nChủ đề: ${c.topic||"tự chọn"} · Trình độ ${c.lv}\n`;
+ if(f)t+=`\nĐiểm (IELTS 0–9): Fluency ${f.band.fluency} · Lexical ${f.band.lexical} · Grammar ${f.band.grammar} → Tổng ${f.overall} (≈ ${(f.overall/9*10).toFixed(1)}/10)\nPhát âm: chưa chấm.\n\n${f.summary}\n\nĐiểm mạnh:\n${f.strengths.map(x=>"- "+x).join("\n")}\n\nCần cải thiện:\n${f.improve.map(x=>"- "+x).join("\n")}\n`;
+ SP.ans.forEach((a,i)=>{t+=`\n--- Câu ${i+1} (Part ${a.part}): ${a.q}\nHọc sinh: ${a.t||"(không trả lời)"}\n`;const x=f&&f.answers[i];if(x){t+=`Nhận xét: ${x.comment}\n`;x.fixes.forEach(y=>t+=`  • "${y.said}" → "${y.better}" (${y.why})\n`);if(x.model)t+=`Mẫu: ${x.model}\n`}});
+ return t
+}
+const bandBar=(l,v)=>`<div class="row sb small" style="margin-top:8px"><span>${l}</span><b>${v}</b></div><div class="bar"><i style="width:${v/9*100}%"></i></div>`;
+function spV(){
+ const h=`<h1>Luyện nói với AI – Giám khảo Speaking</h1>`;
+ if(SP.ph=="gen")return h+`<div class="card empty">Giám khảo đang chuẩn bị câu hỏi…</div>`;
+ if(SP.ph=="eval")return h+`<div class="card empty">Giám khảo đang chấm bài và viết nhận xét… (có thể mất vài chục giây)</div>`;
+ if(SP.ph=="ask"){
+  const q=SP.qs[SP.i],c=q.cue;
+  return h+`<div class="card"><div class="row sb"><span class="tag b">Câu ${SP.i+1}/${SP.qs.length} · Part ${q.part}</span><span class="row"><button class="btn o s" data-act="spTts">${SP.tts?"Tắt giọng giám khảo":"Bật giọng giám khảo"}</button><button class="btn o s" data-act="spQuit">Thoát</button></span></div>
+  <div class="bub" style="margin-top:12px"><b>Examiner:</b> ${esc(q.q)}${c?`<div class="cue">${c.map(esc).join("<br>")}</div>`:""}</div>
+  <div class="row" style="margin-top:10px"><button class="btn o s" data-act="spHear">Nghe lại câu hỏi</button><b id="sp_tm" class="mute">${SP.prep?"Chuẩn bị: 60 giây":"Thời gian: 0:00"}</b>${SP.prep?`<button class="btn s" data-act="spNow">Bắt đầu nói ngay</button>`:""}</div>
+  ${SP.prep?`<p class="mute small">Bạn có 60 giây để chuẩn bị ý. Hết giờ chuẩn bị, giám khảo sẽ mời bạn nói (nên nói 1–2 phút).</p>`:`
+  <div class="row" style="margin-top:12px"><button class="btn ${SP.want?"":"o"}" data-act="spRec" style="${SP.want?"background:var(--bad)":""}">${SP.want?"Dừng ghi âm":"Bấm để nói (micro)"}</button><span class="small mute">${SP.want?"Đang nghe… hãy nói tiếng Anh":SRC?"Hoặc gõ câu trả lời vào ô bên dưới":"Trình duyệt không hỗ trợ micro – hãy gõ câu trả lời"}</span></div>
+  <label class="small mute" style="display:block;margin:10px 0 4px">Câu trả lời của học sinh (văn bản nhận được, có thể chỉnh sửa)</label>
+  <textarea id="sp_ans" rows="6" placeholder="Your answer…">${esc(SP.cur)}</textarea>
+  <div class="row" style="margin-top:12px"><button class="btn" data-act="spNext">${SP.i+1<SP.qs.length?"Nộp & câu tiếp theo":"Nộp & nhận kết quả"}</button><button class="btn o" data-act="spSkip">Bỏ qua câu này</button></div>`}</div>`}
+ if(SP.ph=="done"){
+  const f=SP.fb,c=SP.cfg,tw=SP.ans.reduce((n,a)=>n+a.words,0),ms=SP.ans.filter(a=>a.mic&&a.sec>=5&&a.words>=5),wpm=ms.length?Math.round(ms.reduce((n,a)=>n+a.words,0)/(ms.reduce((n,a)=>n+a.sec,0)/60)):0;
+  let o=h+`<div class="card"><div class="row sb"><div><b>${esc(c.stu||"Học sinh")}</b>${cls(c.cid)?" · Lớp "+esc(cls(c.cid).n):""}<div class="mute small">${esc(PARTN[c.part]||"")} · ${esc(c.topic||"chủ đề tự chọn")} · ${esc(c.lv)}</div></div><div class="row"><button class="btn o s" data-act="spDl">Tải báo cáo</button><button class="btn o s" data-act="spAgain">Luyện lại</button><button class="btn s" data-act="spNew">Bài mới</button></div></div></div>`;
+  if(f)o+=`<div class="card"><div class="row sb"><div><div class="mute small">Điểm tổng (thang IELTS 0–9)</div><div style="font-size:2.4rem;font-weight:800">${f.overall}</div><div class="mute small">≈ ${(f.overall/9*10).toFixed(1)}/10 (quy đổi tham khảo)</div></div><div style="flex:1;min-width:220px">${bandBar("Fluency & Coherence",f.band.fluency)}${bandBar("Lexical Resource",f.band.lexical)}${bandBar("Grammar",f.band.grammar)}</div></div>
+   <p class="small mute" style="margin-top:12px">Phát âm <b>chưa được chấm</b>: AI chỉ nhận chữ, không nghe được giọng. Tổng ${tw} từ${wpm?` · tốc độ nói khoảng ${wpm} từ/phút`:""}. Điểm do AI ước lượng, chỉ để tham khảo, không thay thế giám khảo thật.</p>
+   <p>${esc(f.summary)}</p><div class="row" style="align-items:flex-start;gap:20px"><div style="flex:1;min-width:220px"><b>Điểm mạnh</b><ul>${f.strengths.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div><div style="flex:1;min-width:220px"><b>Cần cải thiện</b><ul>${f.improve.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div></div></div>`;
+  else o+=`<div class="card"><span class="tag w">Chưa có nhận xét</span> ${esc(SP.err||"")} <button class="btn s" data-act="spEval">Chấm lại</button></div>`;
+  SP.ans.forEach((a,i)=>{const x=f&&f.answers[i];
+   o+=`<div class="card"><div class="row sb"><b>Câu ${i+1} · Part ${a.part}</b><span class="mute small">${a.words} từ${a.mic?" · "+a.sec+" giây":" · gõ tay"}</span></div><p><b>Q:</b> ${esc(a.q)}</p><p><b>Học sinh:</b> ${a.t?esc(a.t):'<i class="mute">(không trả lời)</i>'}</p>
+   ${x?`<p>${esc(x.comment)}</p>${x.fixes.filter(y=>y.said||y.better).map(y=>`<div class="fix"><s>${esc(y.said)}</s> → <b>${esc(y.better)}</b><div class="small mute">${esc(y.why)}</div></div>`).join("")}${x.model?`<details><summary>Câu trả lời mẫu</summary><p>${esc(x.model)}</p></details>`:""}`:""}</div>`});
+  return o}
+ /* setup */
+ const c=SP.cfg,sel=(id,arr,v)=>`<select id="${id}">${arr.map(([k,l])=>`<option value="${k}" ${k==v?"selected":""}>${l}</option>`).join("")}</select>`,hist=(S.sp||[]).slice().reverse();
+ return h+`<div class="card"><p class="mute">Giám khảo AI đặt câu hỏi Speaking (đọc to bằng giọng tiếng Anh), học sinh trả lời bằng micro hoặc gõ chữ; cuối bài AI chấm theo Fluency, Lexical Resource, Grammar và góp ý từng câu.</p>
+ ${AI?"":`<p class="aerr">Chức năng AI chưa được bật trên bản này. Quản trị viên cần cấu hình máy chủ AI (xem README.md).</p>`}
+ <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
+ <div><label class="small mute">Cấu trúc bài</label>${sel("sp_part",Object.entries(PARTN),c.part)}</div>
+ <div><label class="small mute">Trình độ</label>${sel("sp_lv",[["A2","A2"],["B1","B1"],["B2","B2"],["C1","C1"]],c.lv)}</div>
+ <div><label class="small mute">Số câu (Part 1 hoặc 3)</label>${sel("sp_n",[2,3,4,5,6,8].map(x=>[x,x]),c.n)}</div>
+ <div><label class="small mute">Chủ đề (để trống = AI chọn)</label><input id="sp_topic" value="${esc(c.topic)}" placeholder="vd: Environment, Technology, Hometown"></div>
+ <div><label class="small mute">Học sinh (tùy chọn)</label><input id="sp_stu" value="${esc(c.stu)}" placeholder="Họ và tên"></div>
+ <div><label class="small mute">Lớp (tùy chọn)</label><select id="sp_cls"><option value="">—</option>${S.c.map(k=>`<option value="${k.id}" ${k.id==c.cid?"selected":""}>${esc(k.n)}</option>`).join("")}</select></div></div>
+ <div class="row" style="margin-top:14px"><button class="btn" data-act="spGo">Bắt đầu buổi thi nói</button></div>
+ <p class="small mute" style="margin-top:12px">Micro: ${SRC?"trình duyệt có hỗ trợ nhận giọng nói; có dùng được hay không tùy quyền micro của trang, nếu không được bạn vẫn gõ câu trả lời.":"trình duyệt này không hỗ trợ nhận giọng nói, bạn sẽ gõ câu trả lời (nên dùng Chrome hoặc Edge để nói)."}</p></div>
+ ${hist.length?`<div class="card"><b>Các buổi luyện nói đã lưu</b>${hist.map(r=>`<div class="row sb" style="padding:8px 0;border-top:1px solid var(--line)"><span>${new Date(r.at).toLocaleDateString("vi-VN")} · ${esc(r.cfg.stu||"(không tên)")} · ${esc((PARTN[r.cfg.part]||"").split(" – ")[0])} · ${esc(r.cfg.topic||"tự chọn")}</span><span class="row">${r.fb?`<span class="tag">${r.fb.overall}</span>`:`<span class="tag w">chưa chấm</span>`}<button class="btn o s" data-act="spView" data-id="${r.id}">Xem</button><button class="btn o s" data-act="spDel" data-id="${r.id}">Xóa</button></span></div>`).join("")}</div>`:""}`
+}
+
+/* ===== Tạo đề theo SGK (AI) ===== */
+const CTABS=[["wiz","Theo SGK Global Success (AI)"],["manual","Soạn tay / chỉnh sửa đề"],["ai","Theo chủ đề tự do (AI)"],["lesson","Từ nội dung bài học (AI)"],["scan","Số hóa từ file Word/PDF"]];
+function ctabs(m){return `<button class="btn ${m=="wiz"?"":"o"}" data-act="mode" data-m="wiz" style="margin-bottom:8px">✨ ${CTABS[0][1]}</button><div class="small mute">Hoặc chọn cách khác:</div><div class="tabs" style="display:inline-flex;flex-wrap:wrap;margin-top:6px">${CTABS.slice(1).map(([k,l])=>`<button data-act="mode" data-m="${k}" aria-pressed="${m==k}">${l}</button>`).join("")}</div>`}
+const BOOKS={gs:"Global Success"};
+const GSU={"6":[["My New School","Trường học mới của tôi"],["My House","Ngôi nhà của tôi"],["My Friends","Những người bạn của tôi"],["My Neighbourhood","Khu phố của tôi"],["Natural Wonders of Viet Nam","Kỳ quan thiên nhiên Việt Nam"],["Our Tet Holiday","Tết của chúng ta"],["Television","Truyền hình"],["Sports and Games","Thể thao và trò chơi"],["Cities of the World","Các thành phố trên thế giới"],["Our Houses in the Future","Ngôi nhà tương lai"],["Our Greener World","Thế giới xanh hơn"],["Robots","Người máy"]],"7":[["Hobbies","Sở thích"],["Healthy Living","Sống khỏe"],["Community Service","Dịch vụ cộng đồng"],["Music and Arts","Âm nhạc và nghệ thuật"],["Food and Drink","Thức ăn và đồ uống"],["A Visit to a School","Chuyến thăm một ngôi trường"],["Traffic","Giao thông"],["Films","Phim ảnh"],["Festivals around the World","Lễ hội trên thế giới"],["Energy Sources","Các nguồn năng lượng"],["Travelling in the Future","Du lịch trong tương lai"],["English-speaking Countries","Các nước nói tiếng Anh"]],"8":[["Leisure Time","Thời gian rảnh rỗi"],["Life in the Countryside","Cuộc sống ở nông thôn"],["Peoples of Viet Nam","Các dân tộc Việt Nam"],["Our Customs and Traditions","Phong tục và truyền thống"],["Festivals in Viet Nam","Lễ hội ở Việt Nam"],["Folk Tales","Truyện dân gian"],["Pollution","Ô nhiễm"],["English Speaking Countries","Các nước nói tiếng Anh"],["Natural Disasters","Thiên tai"],["Communication in the Future","Giao tiếp trong tương lai"],["Science and Technology","Khoa học và công nghệ"],["Life on Other Planets","Sự sống trên các hành tinh khác"]],"9":[["Local Environment","Môi trường địa phương"],["City Life","Cuộc sống thành phố"],["Teen Stress and Pressure","Căng thẳng và áp lực tuổi teen"],["Life in the Past","Cuộc sống ngày xưa"],["Wonders of Viet Nam","Kỳ quan Việt Nam"],["Viet Nam: Then and Now","Việt Nam xưa và nay"],["Recipes and Eating Habits","Công thức và thói quen ăn uống"],["Tourism","Du lịch"],["English in the World","Tiếng Anh trên thế giới"],["Space Travel","Du hành vũ trụ"],["Changing Roles in Society","Vai trò thay đổi trong xã hội"],["My Future Career","Nghề nghiệp tương lai"]],"10":[["Family Life","Cuộc sống gia đình"],["Humans and the Environment","Con người và môi trường"],["Music","Âm nhạc"],["For a Better Community","Vì một cộng đồng tốt đẹp hơn"],["Inventions","Các phát minh"],["Gender Equality","Bình đẳng giới"],["Viet Nam and International Organisations","Việt Nam và các tổ chức quốc tế"],["New Ways to Learn","Các phương pháp học tập mới"],["Protecting the Environment","Bảo vệ môi trường"],["Ecotourism","Du lịch sinh thái"]],
+"11":[["A Long and Healthy Life","Sống dài lâu và khỏe mạnh"],["The Generation Gap","Khoảng cách thế hệ"],["Cities of the Future","Các thành phố tương lai"],["ASEAN and Viet Nam","Hiệp hội ASEAN và Việt Nam"],["Global Warming","Nóng lên toàn cầu"],["Preserving Our Heritage","Bảo tồn di sản của chúng ta"],["Education Options for School-Leavers","Lựa chọn giáo dục sau tốt nghiệp"],["Becoming Independent","Trở nên tự lập"],["Social Issues","Các vấn đề xã hội"],["The Ecosystem","Hệ sinh thái"]],
+"12":[["Life Stories We Admire","Những câu chuyện đời đáng ngưỡng mộ"],["A Multicultural World","Thế giới đa văn hóa"],["Green Living","Sống xanh"],["Urbanisation","Đô thị hóa"],["The World of Work","Thế giới việc làm"],["Artificial Intelligence","Trí tuệ nhân tạo"],["The World of Mass Media","Thế giới truyền thông đại chúng"],["Wildlife Conservation","Bảo tồn động vật hoang dã"],["Career Paths","Con đường sự nghiệp"],["Lifelong Learning","Học tập suốt đời"]]};
+const FMT={thpt:{name:"Đề thi tốt nghiệp THPT 40 câu (Format 2025)",min:50,mods:[{k:"arr",n:5,L:5},{k:"cloze",n:6,t:"leaflet"},{k:"cloze",n:6,t:"ad"},{k:"read",ns:[10,8]},{k:"ins",n:5}]},
+ kttx:{name:"KTTX – Kiểm tra thường xuyên (25 câu)",min:30,tot:25,dyn:1,mods:[]},
+ ktdk:{name:"KTĐK – Kiểm tra định kì (32 câu)",min:45,tot:32,dyn:1,mods:[]},
+ mat:{name:"Theo ma trận đề (tải file Excel)",min:45,tot:0,dyn:1,mx:1,mods:[]}};
+
+const MODC=[["pron","Pronunciation – phát âm (phần gạch chân)"],["stress","Pronunciation – trọng âm"],["vg","Vocabulary & Grammar"],["verb","Verb form – dạng đúng của động từ"],["word","Word form – dạng đúng của từ"],["clz","Cloze reading – điền từ vào đoạn văn"],["read","Reading comprehension – đọc hiểu"],["rw","Viết lại câu / chọn câu cùng nghĩa"]];
+const DEFC={kttx:{pron:2,stress:2,vg:7,verb:2,word:2,clz:5,rw:5},ktdk:{pron:2,stress:2,vg:8,verb:2,word:3,clz:5,read:6,rw:4}};
+const GRT=["Các thì","So sánh","Câu bị động","Câu điều kiện","Câu tường thuật","Mệnh đề quan hệ","Động từ khuyết thiếu","V-ing / to V","Mạo từ – giới từ","Lượng từ","Liên từ – mệnh đề trạng ngữ","Câu hỏi đuôi","Câu ước (wish)"];
+function cfgOf(k){if(!W.cfg)W.cfg={};if(!W.cfg[k])W.cfg[k]=MODC.map(([c])=>({k:c,n:DEFC[k][c]||0,on:!!DEFC[k][c]}));return W.cfg[k]}
+const wF=()=>{const f=FMT[W.fmt];if(!f.dyn)return f;
+ if(f.mx){const r=W.mx.rows.filter(mxUse),got=r.reduce((a,x)=>a+x.n,0);return{...f,min:+W.mx.min||f.min,name:W.mx.title||f.name,got,tot:got,mods:r.map(x=>{const b={topic:x.topic,lvl:x.lvl,spec:x.spec};return x.k=="vg"?{k:"mcq",n:x.n,...b}:x.k=="clz"?{k:"cloze",n:x.n,t:"clz",...b}:x.k=="read"?{k:"read",ns:x.n>=10?[Math.ceil(x.n/2),Math.floor(x.n/2)]:[x.n],...b}:x.k=="arr"?{k:"arr",n:x.n,L:4,...b}:{k:x.k,n:x.n,...b}})}}
+const r=cfgOf(W.fmt).filter(x=>x.on&&x.n>0);return{...f,got:r.reduce((a,x)=>a+x.n,0),mods:r.map(x=>x.k=="vg"?{k:"mcq",n:x.n}:x.k=="clz"?{k:"cloze",n:x.n,t:"clz"}:x.k=="read"?{k:"read",ns:x.n>=10?[Math.ceil(x.n/2),Math.floor(x.n/2)]:[x.n]}:{k:x.k,n:x.n})}};
+const gh=()=>{const t=[...(W.gr||[]),...String(W.gfree||"").split(/[,;]/).map(x=>x.trim()).filter(Boolean)];return t.length?"\nChủ điểm ngữ pháp cần tập trung: "+t.join("; ")+".":""};
+const totH=f=>`Tổng: <b>${f.got}/${f.tot}</b> ${f.got==f.tot?'<span class="tag">Đủ</span>':f.got<f.tot?`<span class="tag w">Thiếu ${f.tot-f.got} câu</span>`:`<span class="tag w">Thừa ${f.got-f.tot} câu</span>`}`;
+const SPEC={pron:{q:"Mark the letter A, B, C, or D to indicate the word whose underlined part differs from the other three in pronunciation.",d:n=>`Soạn ${n} câu PHÁT ÂM: mỗi câu có 4 từ đơn, MỖI từ có phần gạch chân bọc bằng thẻ <u>...</u> (ví dụ "<u>ch</u>air", "he<u>a</u>d"). Ba từ có phần gạch chân phát âm GIỐNG nhau, đúng MỘT từ phát âm KHÁC (từ khác đó là đáp án đúng). Dùng từ phù hợp trình độ học sinh. Mỗi đáp án chỉ là một từ có thẻ <u>.`},
+ stress:{q:"Mark the letter A, B, C, or D to indicate the word that differs from the other three in the position of primary stress.",d:n=>`Soạn ${n} câu TRỌNG ÂM: mỗi câu có 4 từ (2–3 âm tiết, thông dụng), ba từ có trọng âm chính cùng vị trí, đúng MỘT từ có trọng âm khác (từ khác đó là đáp án đúng). Mỗi đáp án chỉ là một từ thường, không thẻ.`},
+ verb:{d:n=>`Soạn ${n} câu DẠNG ĐÚNG CỦA ĐỘNG TỪ: mỗi câu là một câu đầy đủ có một chỗ trống "______" và động từ nguyên mẫu trong ngoặc ngay sau chỗ trống, ví dụ "She ______ (go) to school every day." Bốn đáp án là các dạng khác nhau của động từ đó (chia thì, V-ing, to V, bị động...), chỉ MỘT dạng đúng.`},
+ word:{d:n=>`Soạn ${n} câu DẠNG ĐÚNG CỦA TỪ: mỗi câu có một chỗ trống "______" kèm từ gốc VIẾT HOA trong ngoặc ở cuối câu, ví dụ "He is a very ______ driver. (CARE)". Bốn đáp án là các dạng từ phái sinh khác nhau của từ gốc (danh từ, tính từ, trạng từ, phủ định...), chỉ MỘT dạng đúng.`},
+ rw:{d:n=>`Soạn ${n} câu VIẾT LẠI CÂU: "q" có dạng 'Which sentence is closest in meaning to: "<câu gốc>"?' (hoặc 'Choose the sentence that best combines the two sentences: ...'). Bốn đáp án là 4 câu hoàn chỉnh; chỉ MỘT câu giữ đúng nghĩa và đúng ngữ pháp, ba câu còn lại sai ngữ pháp hoặc đổi nghĩa.`}};
+const modName=m=>m.k=="pron"?"Pronunciation – phát âm":m.k=="stress"?"Pronunciation – trọng âm":m.k=="verb"?"Verb form":m.k=="word"?"Word form":m.k=="rw"?"Viết lại câu":m.k=="cloze"&&m.t=="clz"?"Cloze reading – điền từ":m.k=="cloze"?"Điền từ – "+(m.t=="ad"?"Advertisement":"Leaflet/Announcement"):m.k=="arr"?"Sắp xếp hội thoại / thư":m.k=="read"?"Đọc hiểu"+(m.ns.length>1?" ("+m.ns.length+" bài)":""):m.k=="ins"?"Điền câu vào đoạn":"Từ vựng – ngữ pháp";
+const GEN={clz:"đoạn văn ngắn tự nhiên, mạch lạc, đúng chủ đề (dùng cho bài điền từ vào đoạn)",leaflet:"leaflet (tờ rơi) giới thiệu một hoạt động/sự kiện/dịch vụ, có tiêu đề, câu ngắn, giọng quảng bá",ad:"advertisement (quảng cáo) cho một sản phẩm/khóa học/dịch vụ, văn phong hấp dẫn",passage:"bài đọc thông tin 4–5 đoạn ngắn, mạch lạc, có số liệu hoặc ví dụ cụ thể",ins:"đoạn văn mạch lạc, ít nhất 8 câu, các câu nối chặt ý với nhau (đại từ, từ nối, ý chuyển tiếp)"};
+let W={grade:"12",book:"gs",unit:"4",free:"",fmt:"thpt",ph:"form",step:0,sub:"",err:"",cancel:0,cache:null,exam:null,rng:[],audit:null,title:"",saved:"",cfg:null,gr:[],gfree:"",mx:{rows:[],title:"",min:0,file:""}};
+const wr=()=>{if(view=="create"&&E.mode=="wiz")render()};
+const escRe=s=>s.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+const shuf=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const wUnit=()=>W.fmt=="mat"?(W.mx.scope||"theo từng phần của ma trận đề"):W.book=="gs"&&W.unit!="x"?`Unit ${W.unit} – ${GSU[W.grade][+W.unit-1][0]}`:W.free.trim();
+const wSig=()=>[W.grade,W.book,wUnit(),W.fmt,JSON.stringify([W.cfg&&W.cfg[W.fmt],W.gr,W.gfree,W.fmt=="mat"?[W.mx.rows,W.mx.scope,W.mx.tl]:0])].join("|");
+function wPlan(f){const T=[],M=f.mods.map(m=>{const o={...m,tx:[]};if(m.k=="cloze")o.tx.push(T.push({kind:m.t,topic:m.topic})-1);if(m.k=="read")m.ns.forEach(()=>o.tx.push(T.push({kind:"passage",topic:m.topic})-1));if(m.k=="ins")o.tx.push(T.push({kind:"ins",topic:m.topic})-1);return o});return{T,M}}
+const wCtx=()=>`Sách giáo khoa: ${BOOKS[W.book]} tiếng Anh lớp ${W.grade}. Nội dung: ${wUnit()}. Đối tượng: học sinh ${+W.grade<10?"THCS":"THPT"} Việt Nam, mức độ phù hợp lớp ${W.grade} (CEFR ${{6:"A1",7:"A1–A2",8:"A2",9:"A2",10:"A2–B1",11:"B1"}[W.grade]||"B1–B2"}). Bám chủ đề và từ vựng của unit nhưng viết nội dung ORIGINAL, không chép nguyên văn sách.${+W.grade<10?" Dùng câu ngắn, từ vựng đơn giản, phù hợp lứa tuổi 11–15.":""}`;
+async function wCall(p,check){
+ let last;for(let k=0;k<2;k++){
+  if(W.cancel)throw{code:"cancel"};
+  try{const r=await AI(p+(k?"\n\n(Lần trước kết quả chưa hợp lệ. Hãy làm đúng định dạng JSON yêu cầu, ngắn gọn.)":""),{modelTier:"default",cache:false});if(r.truncated)throw{code:"long"};const j=pj(r.text);const v=check(j);if(!v)throw{code:"bad"};return v}
+  catch(x){last=x;if(x&&(x.code=="not_granted"||x.code=="rate_limited"||x.code=="cancel"))throw x}
+ }throw last||{code:"bad"}
+}
+const okOpts=(o,a)=>Array.isArray(o)&&o.length==4&&Number.isInteger(a)&&a>=0&&a<=3&&new Set(o.map(x=>String(x).trim().toLowerCase())).size==4&&o.every(x=>String(x).trim());
+function mixOpts(o,a){const idx=shuf([0,1,2,3]);return{o:idx.map(i=>String(o[i]).trim()),a:idx.indexOf(a)}}
+const mctx=(m,ctx)=>m.topic||m.lvl?(m.spec?ctx+"\nĐẶC TẢ yêu cầu cần đạt của phần này (bám sát): "+m.spec:ctx)+"\nPHẦN NÀY: "+(m.topic?"bám chủ đề/chủ điểm: "+m.topic+". ":"")+(m.lvl?"Phân bổ mức độ nhận thức theo ma trận: "+m.lvl+" (nhận biết = kiến thức cơ bản, tái hiện trực tiếp; thông hiểu = hiểu và áp dụng trực tiếp; vận dụng = tình huống mới, đáp án nhiễu tinh vi hơn; vận dụng cao = khó nhất). Sắp xếp các câu từ dễ đến khó.":""):ctx;
+async function wMod(m,mat,ctx){
+ if(SPEC[m.k]){const sp=SPEC[m.k];return{items:await wCall(`${ctx}
+${sp.d(m.n)}${gh()}
+Chỉ trả về JSON: {"qs":[{${sp.q?"":'"q":"...",'}"o":["","","",""],"a":0}]}  ("a" là chỉ số 0–3 của đáp án đúng)`,j=>{const L=(j.qs||[]).filter(x=>(sp.q||typeof x.q=="string")&&okOpts(x.o,x.a));return L.length>=m.n?L.slice(0,m.n).map(x=>({q:sp.q||x.q.trim(),...mixOpts(x.o,x.a)})):0})}}
+ if(m.k=="mcq")return{items:await wCall(`${ctx}
+Soạn ${m.n} câu trắc nghiệm ĐỘC LẬP (từ vựng theo chủ đề, ngữ pháp, giao tiếp), mỗi câu 1 chỗ trống "______", 4 đáp án, chỉ MỘT đáp án đúng, ba đáp án còn lại sai rõ ràng, không mơ hồ. Đa dạng dạng câu.${gh()}
+Chỉ trả về JSON: {"qs":[{"q":"...","o":["","","",""],"a":0}]}  ("a" là chỉ số 0–3 của đáp án đúng)`,j=>{const L=(j.qs||[]).filter(x=>typeof x.q=="string"&&okOpts(x.o,x.a));return L.length>=m.n?L.slice(0,m.n).map(x=>({q:x.q.trim(),...mixOpts(x.o,x.a)})):0})};
+ if(m.k=="arr")return{items:await wCall(`${ctx}
+Soạn ${m.n} câu hỏi SẮP XẾP theo kiểu đề thi THPT: ${m.topic?"cơ cấu bắt buộc theo ma trận: "+m.topic+" (hội thoại có dòng \"A:\"/\"B:\"; thư/email; đoạn văn).":"câu lẻ là hội thoại (mỗi dòng có \"A:\"/\"B:\"), câu chẵn là thư/email ngắn hoặc đoạn văn."} Mỗi câu gồm ${m.L} câu/lượt thoại, trình bày theo thứ tự ĐÃ XÁO TRỘN (nhãn a,b,c... sẽ do hệ thống gắn). Thứ tự đúng phải DUY NHẤT nhờ các dấu hiệu (từ nối, đại từ, câu hỏi–trả lời, mở đầu–kết thư).
+"first" là dòng mở đầu cố định không đảo (vd lời chào "Dear Mr Brown,"); để "" nếu không có. 4 đáp án là 4 thứ tự khác nhau dạng chữ cái nối bằng dấu gạch, ví dụ "b-a-c-e-d".
+Chỉ trả về JSON: {"qs":[{"first":"","lines":["...","..."],"o":["","","",""],"a":0}]}`,j=>{const L=(j.qs||[]).filter(x=>Array.isArray(x.lines)&&x.lines.length==m.L&&okOpts(x.o,x.a)&&x.o.every(s=>new RegExp("^["+"abcde".slice(0,m.L)+"](-["+"abcde".slice(0,m.L)+"]){"+(m.L-1)+"}$").test(String(s).trim())));return L.length>=m.n?L.slice(0,m.n).map(x=>({q:(String(x.first||"").trim()||"Sắp xếp các câu sau thành một đoạn hoàn chỉnh:")+"\n"+x.lines.map((l,i)=>"abcde"[i]+". "+String(l).trim()).join("\n"),...mixOpts(x.o.map(s=>String(s).trim().replace(/-/g," - ")),x.a)})):0})};
+ if(m.k=="cloze"){const t=mat[m.tx[0]];return await wCall(`${ctx}
+Dưới đây là ngữ liệu hoàn chỉnh (${GEN[t.kind].split(" (")[0]}):
+"""
+${t.text}
+"""
+Hãy tạo câu hỏi ĐIỀN TỪ: chọn đúng ${m.n} vị trí trong văn bản, thay bằng [[1]], [[2]]... theo thứ tự xuất hiện. Đa dạng: giới từ, từ nối, dạng từ/ngữ pháp, collocation, từ vựng theo ngữ cảnh. Mỗi chỗ trống có 4 đáp án (từ/cụm ngắn), chỉ MỘT đáp án đúng, ba đáp án còn lại sai rõ ràng trong ngữ cảnh.
+Chỉ trả về JSON: {"text":"văn bản đã thay chỗ trống","qs":[{"k":1,"o":["","","",""],"a":0}]}`,j=>{const L=(j.qs||[]).filter(x=>Number.isInteger(x.k)&&okOpts(x.o,x.a)).sort((a,b)=>a.k-b.k);const tx=String(j.text||"");return L.length==m.n&&L.every((x,i)=>x.k==i+1&&tx.includes("[[" +x.k+"]]"))?{text:tx,items:L.map(x=>({k:x.k,...mixOpts(x.o,x.a)}))}:0})}
+ if(m.k=="ins"){const t=mat[m.tx[0]];return await wCall(`${ctx}
+Dưới đây là đoạn văn hoàn chỉnh:
+"""
+${t.text}
+"""
+Hãy tạo câu hỏi ĐIỀN CÂU VÀO ĐOẠN: xóa ${m.n} câu trọn vẹn (không xóa câu đầu tiên), thay bằng [[1]], [[2]]... theo thứ tự xuất hiện. Mỗi chỗ trống có 4 câu lựa chọn (câu đúng là câu đã xóa hoặc câu tương đương); ba câu nhiễu đúng ngữ pháp, cùng chủ đề nhưng KHÔNG hợp mạch (sai đại từ/từ nối/ý) – chỉ MỘT câu hợp logic.
+Chỉ trả về JSON: {"text":"đoạn văn đã thay chỗ trống","qs":[{"k":1,"o":["","","",""],"a":0}]}`,j=>{const L=(j.qs||[]).filter(x=>Number.isInteger(x.k)&&okOpts(x.o,x.a)).sort((a,b)=>a.k-b.k);const tx=String(j.text||"");return L.length==m.n&&L.every((x,i)=>x.k==i+1&&tx.includes("[[" +x.k+"]]"))?{text:tx,items:L.map(x=>({k:x.k,...mixOpts(x.o,x.a)}))}:0})}
+ if(m.k=="read"){const parts=[];for(let i=0;i<m.ns.length;i++){const t=mat[m.tx[i]],n=m.ns[i];
+  parts.push(await wCall(`${ctx}
+Bài đọc:
+"""
+${t.text}
+"""
+Soạn ${n} câu hỏi đọc hiểu theo thứ tự xuất hiện của thông tin trong bài, đa dạng: ý chính/tiêu đề (1), chi tiết, NOT mentioned/TRUE (1–2), từ vựng trong ngữ cảnh ("The word X in paragraph k is closest in meaning to ..." hoặc opposite) (1–2), quy chiếu ("The word 'they' in paragraph k refers to ...") (1), suy luận, mục đích/thái độ. Mỗi câu 4 đáp án, chỉ MỘT đáp án đúng, ba đáp án còn lại sai rõ ràng.
+Với câu từ vựng/quy chiếu: trường "mark" là từ/cụm CHÍNH XÁC trong bài (hệ thống sẽ in đậm), và trong "q" bọc từ đó bằng **...**; các câu khác để "mark":"".
+Chỉ trả về JSON: {"qs":[{"q":"...","mark":"","o":["","","",""],"a":0}]}`,j=>{const L=(j.qs||[]).filter(x=>typeof x.q=="string"&&okOpts(x.o,x.a));return L.length>=n?{text:t.text,items:L.slice(0,n).map(x=>{let mk=String(x.mark||"").trim(),q=x.q.trim();if(mk&&!new RegExp("\\b"+escRe(mk)+"\\b").test(t.text))mk="";if(mk&&!q.includes("**"))q=q.replace(mk,"**"+mk+"**");return{q,mark:mk,...mixOpts(x.o,x.a)}})}:0}))}
+  return{parts}}
+}
+function wBuild(M,mods){const qs=[],rng=[];M.forEach((m,i)=>{const d=mods[i],s=qs.length;
+ if(m.k!="cloze"&&m.k!="ins"&&m.k!="read")d.items.forEach(it=>qs.push({p:"",q:it.q,o:it.o,a:it.a}));
+ else if(m.k=="cloze"||m.k=="ins"){const p=d.text.replace(/\[\[(\d+)\]\]/g,(_,k)=>`(${s+ +k}) ______`);d.items.forEach(it=>qs.push({p,q:m.k=="cloze"?`(${s+it.k}) ______`:`Chọn câu phù hợp nhất cho chỗ trống (${s+it.k}).`,o:it.o,a:it.a}))}
+ else d.parts.forEach(pt=>{let p=pt.text;pt.items.forEach(it=>{if(it.mark){const re=new RegExp("\\b"+escRe(it.mark)+"\\b");if(!p.includes("**"+it.mark+"**"))p=p.replace(re,"**"+it.mark+"**")}});pt.items.forEach(it=>qs.push({p,q:it.q,o:it.o,a:it.a}))});
+ rng.push([s+1,qs.length])});return{qs,rng}}
+async function wAudit(qs){
+ let lp=null;const txt=qs.map((q,i)=>{let h="";if(q.p&&q.p!==lp)h=`\n=== PASSAGE ===\n${q.p.replace(/\*\*/g,"")}\n`;lp=q.p||null;return h+`#${i+1}: ${q.q.replace(/\*\*/g,"")}\n${q.o.map((o,j)=>"ABCD"[j]+". "+o).join("\n")}`}).join("\n");
+ const p=`Bạn là giáo viên tiếng Anh giàu kinh nghiệm đang rà soát đề. Hãy tự giải ĐỘC LẬP từng câu dưới đây (đề có thể có lỗi). Với mỗi câu: "pick" = chữ cái (A–D) bạn chọn; "unique" = false nếu không có đáp án nào đúng hoặc có từ 2 đáp án trở lên đều chấp nhận được.
+${txt}
+Chỉ trả về JSON dạng {"results":[{"n":1,"pick":"A","unique":true}]} với đúng ${qs.length} phần tử trong "results".`;
+ const r=await wCall(p,j=>{const a=j.results;return Array.isArray(a)&&a.length>=qs.length?a:0}).catch(x=>{if(x&&(x.code=="not_granted"||x.code=="rate_limited"||x.code=="cancel"))throw x;return null});
+ if(!r)return{ok:0,n:qs.length,flag:0,agree:0};
+ let flag=0,agree=0;qs.forEach((q,i)=>{const x=r.find(y=>+y.n==i+1)||r[i]||{},pk="ABCD".indexOf(String(x.pick||"").trim().toUpperCase()[0]);if(pk===q.a&&x.unique!==false)agree++;else{q.chk=1;flag++}});
+ return{ok:1,n:qs.length,flag,agree}
+}
+async function wRun(){
+ if(!AI)return toast("Chưa kết nối được AI. Hãy cho phép trang gọi Claude khi được hỏi.");
+ if(W.ph=="run")return;
+ if(!wUnit())return toast("Hãy nhập Unit & chủ đề.");
+ const f=wF(),{T,M}=wPlan(f),ctx=wCtx();
+ if(f.mx&&!f.got)return toast("Hãy tải lên và đọc file ma trận trước.");
+ if(f.mx&&f.got>60)return toast("Tổng số câu tối đa là 60.");
+ if(f.dyn&&f.got!=f.tot)return toast("Tổng số câu phải bằng "+f.tot+" (hiện là "+f.got+"). Hãy chỉnh lại cấu trúc đề.");
+ if(!W.cache||W.cache.sig!=wSig())W.cache={sig:wSig(),mat:null,mods:{}};
+ W.ph="run";W.step=0;W.sub="";W.err="";W.cancel=0;W.exam=null;W.saved="";W.audit=null;wr();
+ try{
+  if(!W.cache.mat){
+   W.sub="";wr();
+   const spec=T.map((t,i)=>`- id "t${i}": ${GEN[t.kind]}, khoảng ${t.kind=="passage"?300:t.kind=="ins"?210:110} từ${t.topic?`, chủ đề: ${t.topic}`:""}`).join("\n");
+   W.cache.mat=await wCall(`${ctx}
+Hãy viết các ngữ liệu tiếng Anh ORIGINAL sau. Mỗi ngữ liệu là văn bản HOÀN CHỈNH, tự nhiên, không có chỗ trống, không đánh số câu; các ngữ liệu nói về các khía cạnh khác nhau của chủ đề; đoạn văn xuống dòng bằng \\n.
+${spec}
+Chỉ trả về JSON: {"texts":[{"id":"t0","title":"...","text":"..."}]}`,j=>{const L=j.texts;return Array.isArray(L)&&T.every((_,i)=>L.find(x=>x.id=="t"+i&&String(x.text||"").length>60))?T.map((t,i)=>({kind:t.kind,text:String(L.find(x=>x.id=="t"+i).text).trim()})):0});
+  }
+  W.step=1;
+  for(let i=0;i<M.length;i++){
+   W.sub=`Module ${i+1}/${M.length}: ${modName(M[i])}`;wr();
+   if(!W.cache.mods[i])W.cache.mods[i]=await wMod(M[i],W.cache.mat,mctx(M[i],ctx));
+  }
+  const {qs,rng}=wBuild(M,W.cache.mods);
+  W.step=2;W.sub="AI tự giải lại độc lập từng câu";wr();
+  W.audit=await wAudit(qs);
+  W.exam={qs};W.rng=rng;W.title=f.mx?`${f.name} – Lớp ${W.grade}`:`${f.name.replace(/ \(.*\)$/,"")} – ${BOOKS[W.book]} ${W.grade} – ${wUnit()}`;W.ph="prev";W.step=3;
+ }catch(x){W.ph="form";W.err=x&&x.code=="cancel"?"Đã hủy tạo đề.":(x&&(x.code=="not_granted"||x.code=="rate_limited")?aiErr(x):"AI trả kết quả chưa hợp lệ sau 2 lần thử.")+" Phần đã tạo xong được giữ lại – bấm lại để tạo tiếp."}
+ wr()
+}
+function wizTop(){return `<h1>Tạo đề</h1><div class="card" style="padding:12px">${ctabs(E.mode)}</div>`}
+function wizV(){
+ const f=wF(),{M}=wPlan(f);
+ if(W.ph=="run"){
+  const S3=["Đang khởi tạo ngữ liệu (Announcement, Leaflet, Passages)...",`Đang biên soạn ${M.length} module câu hỏi...`,"Đang rà soát và kiểm toán đáp án duy nhất..."];
+  return wizTop()+`<div class="card"><b>${esc(f.name)}</b><div class="mute small">${esc(BOOKS[W.book])} ${W.grade} · ${esc(wUnit())}</div>
+  <ol class="stp" aria-live="polite">${S3.map((t,i)=>`<li class="${i<W.step?"done":i==W.step?"cur":""}"><span class="dot">${i<W.step?"✓":i==W.step?'<i class="spin"></i>':i+1}</span><div>${t}${i==W.step&&W.sub?`<div class="small mute">${esc(W.sub)}</div>`:""}</div></li>`).join("")}</ol>
+  <p class="small mute">Việc này gọi AI nhiều lần nên có thể mất 2–4 phút. Bạn có thể chuyển menu khác, quá trình vẫn chạy tiếp.</p><button class="btn o s" data-act="wzCancel">Hủy</button></div>`}
+ if(W.ph=="prev"&&W.exam){
+  const qs=W.exam.qs,cnt=[0,0,0,0];qs.forEach(q=>cnt[q.a]++);const fl=qs.filter(q=>q.chk).length,au=W.audit||{};
+  const modOf=i=>W.rng.findIndex(r=>i+1>=r[0]&&i+1<=r[1]);
+  return wizTop()+`<div class="card"><label for="wz_ti">Tên đề</label><input id="wz_ti" data-w="title" value="${esc(W.title)}">
+  <div class="row" style="margin:10px 0"><span class="tag b">${qs.length} câu</span><span class="tag b">Gợi ý ${f.min} phút</span><span class="tag w">AI tạo, cần giáo viên đọc lại</span>${fl?`<span class="tag w">${fl} câu cần kiểm tra</span>`:""}</div>
+  <p class="small" style="margin:6px 0">${au.ok?`Kiểm toán: AI tự giải lại độc lập, <b>${au.agree}/${au.n}</b> câu trùng đáp án và có đúng một đáp án.${fl?` <b>${fl} câu</b> bị gắn nhãn "cần kiểm tra" (ô viền cam bên dưới).`:""} Đây là kiểm tra chéo bằng AI, không thay thế việc thầy/cô đọc lại đề.`:`Chưa kiểm toán được đáp án (AI không trả kết quả hợp lệ). Hãy đọc lại đề trước khi dùng.`}</p>
+  <h2 style="margin-top:14px">Cấu trúc đề</h2><table class="wt"><thead><tr><th>Module</th><th>Câu</th><th>Số câu</th></tr></thead><tbody>${M.map((m,i)=>`<tr><td><span class="sw" style="background:hsl(${i*65+215} 70% 50%/.35)"></span>${esc(modName(m))}</td><td>${W.rng[i][0]}–${W.rng[i][1]}</td><td>${W.rng[i][1]-W.rng[i][0]+1}</td></tr>`).join("")}</tbody></table>
+  <h2 style="margin-top:14px">Ma trận đáp án</h2><div class="mx">${qs.map((q,i)=>`<div class="${q.chk?"fl":""}" style="background:hsl(${modOf(i)*65+215} 70% 50%/.18)" title="${q.chk?"Cần kiểm tra":""}"><small>${i+1}</small><b>${"ABCD"[q.a]}</b></div>`).join("")}</div>
+  <p class="small mute">Phân bố đáp án: A ${cnt[0]} · B ${cnt[1]} · C ${cnt[2]} · D ${cnt[3]}</p>
+  <div class="row" style="margin-top:14px"><button class="btn" data-act="wzSave">Lưu vào Kho đề</button><button class="btn o" data-act="wzTry">Thử làm đề này</button><button class="btn o" data-act="dxl" data-id="__new" data-a="0">Word (đề)</button><button class="btn o" data-act="dxl" data-id="__new" data-a="1">Word (có đáp án)</button><button class="btn o" data-act="wzEdit">Chỉnh sửa câu hỏi</button><button class="btn o" data-act="wzNew">Tạo đề khác</button></div></div>`}
+ const gs=W.book=="gs",free=!gs||W.unit=="x",opt=(arr,v)=>arr.map(([k,l])=>`<option value="${k}" ${k==v?"selected":""}>${l}</option>`).join("");
+ return wizTop()+`<div class="card"><h2>Cấu hình tạo đề</h2>${W.err?`<div class="aerr" role="alert">${esc(W.err)}</div>`:""}${!AI?`<div class="aerr">Chức năng AI chưa được bật trên bản này. Quản trị viên cần cấu hình máy chủ AI (xem README.md).</div>`:""}
+ <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px">
+ <div><label for="wz_g" class="small mute">Khối lớp</label><select id="wz_g" data-w="grade">${opt([["6","Lớp 6"],["7","Lớp 7"],["8","Lớp 8"],["9","Lớp 9"],["10","Lớp 10"],["11","Lớp 11"],["12","Lớp 12"]],W.grade)}</select></div>
+ ${W.fmt=="mat"?"":`<div><label for="wz_u" class="small mute">Unit & chủ đề</label>${gs?`<select id="wz_u" data-w="unit">${GSU[W.grade].map((t,i)=>`<option value="${i+1}" ${W.unit==i+1?"selected":""}>Unit ${i+1} – ${t[0]} (${t[1]})</option>`).join("")}<option value="x" ${W.unit=="x"?"selected":""}>Khác (nhập tay)…</option></select>`:""}${free?`<input id="wz_f" data-w="free" value="${esc(W.free)}" placeholder="Ví dụ: Unit 4 – Urbanisation" style="${gs?"margin-top:6px":""}">`:""}</div>`}
+ <div><label for="wz_m" class="small mute">Định dạng</label><select id="wz_m" data-w="fmt">${opt(Object.entries(FMT).filter(([k])=>+W.grade>=10||k!="thpt").map(([k,v])=>[k,v.name]),W.fmt)}</select></div></div>
+ ${f.mx?mxUI():f.dyn?`<div class="card" style="margin-top:12px;background:var(--bg)"><div class="row sb"><h2 style="margin:0">Cấu trúc đề ${f.tot} câu</h2><button class="btn o s" data-act="wzReset">Đặt lại mặc định</button></div><div class="small mute" style="margin:4px 0 8px">Bật/tắt dạng bài và chọn số câu. Tổng phải bằng ${f.tot}.</div>${cfgOf(W.fmt).map((r,i)=>`<div class="row sb" style="padding:6px 0;border-top:1px solid var(--line)"><label style="margin:0;display:flex;gap:8px;align-items:center;font-weight:500"><input type="checkbox" style="width:auto" data-won="${i}" ${r.on?"checked":""}>${MODC[i][1]}</label><input type="number" min="0" max="${f.tot}" data-wm="${i}" value="${r.n}" style="width:84px" aria-label="Số câu ${esc(MODC[i][1])}" ${r.on?"":"disabled"}></div>`).join("")}<div id="wz_tot" style="padding-top:8px;border-top:1px solid var(--line)">${totH(f)}</div><h2 style="margin-top:14px">Chủ điểm ngữ pháp (tùy chọn)</h2><div class="small mute" style="margin-bottom:6px">AI sẽ tập trung vào các chủ điểm bạn chọn khi soạn Vocabulary &amp; Grammar, Verb form, Word form, Viết lại câu.</div><div class="row">${GRT.map(g=>`<label style="margin:0;font-weight:500;display:flex;gap:6px;align-items:center;border:1px solid var(--line);border-radius:99px;padding:.2rem .7rem"><input type="checkbox" style="width:auto" data-wg="${esc(g)}" ${(W.gr||[]).includes(g)?"checked":""}>${g}</label>`).join("")}</div><input data-w="gfree" value="${esc(W.gfree||"")}" placeholder="Chủ điểm khác (cách nhau bằng dấu phẩy)" style="margin-top:8px"></div>`:""}
+ <p class="small mute" style="margin-top:10px">${W.fmt=="mat"?"Mỗi dòng của ma trận có chủ đề riêng, AI sẽ soạn từng phần theo đúng chủ đề và mức độ đã khai. ":gs?"Danh sách Unit Global Success lấy từ bảng mục lục bạn gửi. ":"Với bộ sách này, hãy tự nhập tên Unit & chủ đề (chưa có danh mục đã kiểm chứng). "}AI chỉ bám chủ đề và từ vựng, không sao chép nội dung sách.</p>
+ <div class="row" style="margin-top:14px"><button class="btn" data-act="wzGo" ${AI?"":"disabled"}>${W.cache&&W.cache.sig==wSig()&&(W.cache.mat||Object.keys(W.cache.mods).length)?"Tiếp tục tạo đề bằng AI":"Bắt đầu tạo đề bằng AI"}</button></div></div>`
+}
+
+/* ===== Tạo đề từ ma trận Excel ===== */
+const nrm=s=>String(s==null?"":s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/đ/g,"d").trim();
+function mxKind(s){const t=nrm(s).replace(/[-_]/g," ");if(!t)return null;
+ if(/listening|nghe/.test(t))return"listen";
+ if(/trong am|stress/.test(t))return"stress";if(/phat am|pronunc|gach chan|underlin|diphthong|vowel|consonant/.test(t))return"pron";
+ if(/verb form|chia (dong tu|the)|dang (dung )?(cua )?dong tu|chia dong/.test(t))return"verb";
+ if(/word form|word formation|correct form|given word|dang (dung )?(cua )?tu\b|phai sinh/.test(t))return"word";
+ if(/viet lai|rewrit|transform|cung nghia/.test(t))return"rw";
+ if(/cloze|dien tu|gap.?fill/.test(t))return"clz";if(/doc hieu|reading/.test(t))return"read";
+ if(/sap xep|arr?ang/.test(t))return"arr";if(/dien cau|insert/.test(t))return"ins";
+ if(/vocab|grammar|tu vung|ngu phap|giao tiep|trac nghiem|multiple/.test(t))return"vg";return null}
+const MXN={arr:"Sắp xếp hội thoại / thư",ins:"Điền câu vào đoạn văn"};
+const mxName=k=>MXN[k]||(MODC.find(x=>x[0]==k)||[0,k])[1];
+function mxHdr(row){const M={};row.forEach((h,i)=>{const t=nrm(h);if(!t)return;let k=null;
+ if(/dang bai|loai|module/.test(t))k="type";else if(/chu de|unit|chu diem|noi dung/.test(t))k="topic";else if(/van dung cao/.test(t))k="vdc";else if(/van dung/.test(t))k="vd";else if(/thong hieu/.test(t))k="th";else if(/nhan biet/.test(t))k="nb";else if(/so cau|tong/.test(t))k="n";
+ if(k&&!(k in M))M[k]=i});return M}
+function mxParse(A){let hi=-1,M={};for(let i=0;i<Math.min(A.length,10);i++){const m=mxHdr(A[i]);if("type" in m){hi=i;M=m;break}}
+ if(hi<0)return null;const num=v=>{const x=parseInt(String(v||"").trim(),10);return x>0?Math.min(x,60):0};const rows=[];
+ for(let i=hi+1;i<A.length;i++){const r=A[i],ty=String(r[M.type]||"").trim();if(!ty)continue;
+  const lv=[["nb","Nhận biết"],["th","Thông hiểu"],["vd","Vận dụng"],["vdc","Vận dụng cao"]].map(([k,l])=>[l,k in M?num(r[M[k]]):0]).filter(x=>x[1]>0);
+  const n=lv.length?lv.reduce((a,x)=>a+x[1],0):("n" in M?num(r[M.n]):0),k=mxKind(ty);
+  rows.push({ty,k,topic:"topic" in M?String(r[M.topic]||"").trim():"",lvl:lv.map(x=>x[0]+" "+x[1]+" câu").join(", "),n,w:!k?"Không nhận ra dạng bài":!n?"Chưa có số câu":""})}
+ return rows}
+
+function mxMeta(A){const m={};for(let i=0;i<Math.min(A.length,22);i++){const r=A[i];for(let j=0;j<r.length;j++){const t=nrm(r[j]);if(!t)continue;
+  if(/^lop:?$/.test(t)&&!m.grade){const g=r.slice(j+1).map(x=>parseInt(x,10)).find(x=>x>=6&&x<=12);if(g)m.grade=String(g)}
+  if(/thoi gian lam bai/.test(t)&&!m.min){const q=t.match(/thoi gian lam bai\D{0,6}(\d{2,3})/);const v=q?+q[1]:r.slice(j+1).map(x=>parseInt(x,10)).find(x=>x>=5&&x<=180);if(v)m.min=v}
+  if(/^de kiem tra/.test(t)&&!m.title)m.title=String(r[j]).trim()}}return m}
+function mxParseBo(A){let hi=-1,uc=-1,gc=-1;
+ for(let i=0;i<Math.min(A.length,45);i++){const c=A[i].map(nrm);const u=c.findIndex(x=>/^don vi kien thuc/.test(x));if(u>=0){hi=i;uc=u;gc=c.findIndex(x=>/^noi dung kien thuc/.test(x));break}}
+ if(hi<0)return null;let li=-1,L=[];
+ for(let i=hi;i<Math.min(A.length,hi+6);i++){const ix=[];A[i].forEach((v,j)=>{if(/^(biet|hieu|vd|van dung)$/.test(nrm(v)))ix.push(j)});if(ix.length>=3){li=i;L=ix;break}}
+ if(li<0)return null;const TN=L.slice(0,3),TL=L.slice(3,6),num=v=>{const x=parseInt(String(v||"").trim(),10);return x>0?x:0};
+
+ const sp=new Map(),si=A.findIndex((r,i)=>i>li&&r.some(v=>/^dac ta/.test(nrm(v))));
+ if(si>=0){let sh=-1,sl=-1,c={};for(let i=si;i<Math.min(A.length,si+8);i++){const n=A[i].map(nrm);if(sh<0){const q=n.findIndex(x=>/^yeu cau/.test(x));if(q>=0){sh=i;c.req=q;c.grp=n.findIndex(x=>/^chu de/.test(x));c.unit=n.findIndex(x=>/^noi dung/.test(x))}}
+   const ix=[];A[i].forEach((v,j)=>{if(/^(biet|hieu|vd|van dung)$/.test(nrm(v)))ix.push(j)});if(sh>=0&&ix.length>=3){sl=i;c.cols=ix;break}}
+  if(sl>=0){let g="",u="";for(let i=sl+1;i<A.length;i++){const r=A[i];if(/^tong so cau/.test(nrm(r[0])))break;const gg=String(r[c.grp>=0?c.grp:1]||"").trim();if(gg){g=gg;u=""}const uu=String(r[c.unit>=0?c.unit:2]||"").trim();if(uu)u=uu;
+   const desc=String(r[c.req+1]||"").trim();if(!desc)continue;const tl=c.cols.slice(3,6).some(j=>num(r[j]))?1:0,gk=mxKind(g),force=["listen","clz","read","arr","ins"].includes(gk);
+   let k=force?gk:(mxKind(u)||gk);if(!k&&tl&&!/passage|paragraph/.test(nrm(u)))k="rw";if(!k)continue;const key=k+"|"+tl;if(!sp.has(key))sp.set(key,[]);sp.get(key).push((u?u+": ":"")+desc.replace(/\s+/g," "))}}}
+ const mods=new Map();let grp="";
+ for(let i=li+1;i<A.length;i++){const r=A[i];if(r.some(v=>/^(tong so cau|dac ta|iv\.?$)/.test(nrm(v)))||/dac ta/.test(nrm(r[gc>=0?gc:1])))break;
+  const g=String(r[gc>=0?gc:1]||"").trim();if(g)grp=g;const unit=String(r[uc]||"").trim();if(!unit)continue;
+  const gk=mxKind(grp),force=["listen","clz","read","arr","ins"].includes(gk);
+  [[TN,0],[TL,1]].forEach(([cols,tl])=>{if(!cols.length)return;const c=cols.map(j=>num(r[j])),n=c[0]+c[1]+c[2];if(!n)return;
+   const k=force?gk:(mxKind(unit)||gk),key=grp+"|"+k+"|"+tl;
+   if(!mods.has(key))mods.set(key,{ty:grp,k,tl,units:[],c:[0,0,0]});const o=mods.get(key);o.units.push([unit,n]);o.c=o.c.map((x,q)=>x+c[q])})}
+ const rows=[...mods.values()].map(o=>{const n=o.c[0]+o.c[1]+o.c[2],lv=[["Biết",o.c[0]],["Hiểu",o.c[1]],["Vận dụng",o.c[2]]].filter(x=>x[1]).map(x=>x[0]+" "+x[1]+" câu").join(", ");
+  const topic=o.k=="arr"?o.units.map(u=>u[0]+" "+u[1]+" câu").join("; "):o.units.map(u=>u[0]).join("; ");
+  const spc=(sp.get(o.k+"|"+o.tl)||[]).join(" | ").slice(0,1000);return{ty:o.ty,k:o.k,tl:o.tl,topic,lvl:lv,spec:spc,n,w:!o.k?"Không nhận ra dạng bài / chưa hỗ trợ dạng tự luận này":o.k=="listen"?"Chưa hỗ trợ Listening (cần file âm thanh)":""}});
+ return{rows,meta:mxMeta(A)}}
+async function mxRead(){const f=($("mfile")||{}).files&&$("mfile").files[0];if(!f)return toast("Hãy chọn file Excel (.xlsx) trước.");if(f.size>5242880)return toast("File lớn hơn 5 MB.");
+ try{if(!window.XLSX)await loadJS(XLS);const wb=XLSX.read(await f.arrayBuffer(),{type:"array"});const ws=wb.Sheets[wb.SheetNames[0]];const A=XLSX.utils.sheet_to_json(ws,{header:1,raw:false,defval:""});
+  const bo=mxParseBo(A),rows=bo?bo.rows:mxParse(A);if(!rows){W.mx.rows=[];render();return toast('Không tìm thấy cột "Dạng bài" ở dòng tiêu đề. Hãy dùng file Excel mẫu.')}
+  rows.forEach(r=>{if(r.k&&!r.n)r.n=0;r.w=mxW(r)});W.mx.rows=rows;W.mx.file=f.name;const mt=bo?bo.meta:{};W.mx.title=mt.title||f.name.replace(/\.[^.]+$/,"");if(mt.grade)W.grade=mt.grade;const got=rows.filter(r=>mxUse(r)).reduce((a,r)=>a+r.n,0);W.mx.min=mt.min||Math.max(15,Math.ceil(got*1.2/5)*5);W.cache=null;render();
+  toast(got?"Đã đọc "+rows.filter(r=>mxUse(r)).length+" phần, tổng "+got+" câu.":"Không có dòng hợp lệ trong file.")}catch(x){toast("Không đọc được file. Hãy kiểm tra lại file Excel.")}}
+async function mxTemplate(){
+ try{if(!window.XLSX)await loadJS(XLS);const H=["Dạng bài","Chủ đề / Unit / Chủ điểm ngữ pháp","Nhận biết","Thông hiểu","Vận dụng","Vận dụng cao"];
+  const R=[["Pronunciation (phần gạch chân)","Phát âm đuôi -s/-es, -ed",1,1,0,0],["Pronunciation (trọng âm)","Từ 2–3 âm tiết",1,1,0,0],["Vocabulary & Grammar","Unit 4 – Our customs and traditions",3,3,1,0],["Verb form","Các thì hiện tại và quá khứ",1,1,0,0],["Word form","Từ loại và hậu tố",1,1,1,0],["Cloze reading","Unit 4 – Our customs and traditions",2,2,1,0],["Reading comprehension","Unit 4 – Our customs and traditions",2,2,2,0],["Viết lại câu","Câu bị động",1,1,2,1]];
+  const G=[["HƯỚNG DẪN"],["1. Mỗi dòng là một dạng bài. Dòng 2 trở đi chỉ là ví dụ, hãy xóa hoặc ghi đè."],["2. Cột Dạng bài nhận các tên sau (viết tiếng Anh hoặc tiếng Việt đều được):"],["   Pronunciation (phần gạch chân) · Pronunciation (trọng âm) · Vocabulary & Grammar · Verb form · Word form · Cloze reading · Reading comprehension · Viết lại câu · Sắp xếp hội thoại/thư · Điền câu vào đoạn"],["3. Cột Chủ đề: tên Unit hoặc chủ điểm ngữ pháp của dòng đó (có thể để trống)."],["4. Nhập số câu ở các cột Nhận biết / Thông hiểu / Vận dụng / Vận dụng cao. Tổng các cột là số câu của dòng. Nếu ma trận của bạn không chia mức độ, thêm cột Số câu và chỉ điền cột đó."],["5. Mỗi bài đọc hiểu nên có 4–10 câu. Từ 10 câu trở lên app tự chia thành 2 bài đọc."],["6. Tổng số câu tối đa 60."]];
+  const wb=XLSX.utils.book_new(),ws=XLSX.utils.aoa_to_sheet([H,...R]);ws["!cols"]=[{wch:34},{wch:40},{wch:10},{wch:11},{wch:10},{wch:13}];XLSX.utils.book_append_sheet(wb,ws,"Ma trận đề");XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(G),"Hướng dẫn");
+  await DL.save({filename:"mau-ma-tran-de.xlsx",data:XLSX.write(wb,{type:"array",bookType:"xlsx"})});toast("Đã lưu file mẫu.")}catch(x){if(!x||x.code!="declined")toast("Không tải được file mẫu, hãy thử lại.")}}
+const mxKinds=[...MODC.map(([k,l])=>[k,l]),["arr","Sắp xếp hội thoại / thư / đoạn văn"],["ins","Điền câu vào đoạn văn"],["listen","Listening (chưa hỗ trợ)"]];
+const mxW=r=>!r.k?"Chưa chọn dạng bài":r.k=="listen"?"Chưa hỗ trợ Listening (cần file âm thanh)":!(r.n>0)?"Chưa có số câu":"";
+const mxSt=r=>r.w?"⚠ "+r.w+" – dòng này bị bỏ qua":r.tl&&W.mx.tl===false?"– Phần tự luận đang tắt, không đưa vào đề":"✓ Sẽ đưa vào đề ("+r.n+" câu)";
+const mxTotH=()=>{const got=W.mx.rows.filter(mxUse).reduce((a,r)=>a+r.n,0);return `Tổng: <b>${got}</b> câu${got>60?' <span class="tag w">Vượt 60 câu</span>':""}`};
+const mxUse=r=>!r.w&&r.n>0&&(!r.tl||W.mx.tl!==false);
+function mxUI(){const mx=W.mx,got=mx.rows.filter(mxUse).reduce((a,r)=>a+r.n,0),hasTL=mx.rows.some(r=>r.tl&&!r.w);
+ return `<div class="card" style="margin-top:12px;background:var(--bg)"><h2 style="margin:0 0 6px">Tạo đề từ ma trận (Excel)</h2><div class="small mute" style="margin-bottom:8px">Bước 1: tải file mẫu và điền ma trận đề (mỗi dòng một dạng bài). Bước 2: chọn file rồi bấm Đọc file. Bước 3: kiểm tra bảng xem trước rồi bấm Bắt đầu tạo đề bằng AI.</div>${DL?'<button class="btn o" data-act="mxTpl">Tải file Excel mẫu</button>':'<div class="small mute">File Excel mẫu được gửi kèm trong khung chat.</div>'}
+ <label for="mfile">Chọn file ma trận (.xlsx)</label><input id="mfile" type="file" accept=".xlsx,.xls,.csv"><div style="margin-top:8px"><button class="btn o" data-act="mxRead">Đọc file</button></div>
+ <h2 style="margin-top:14px">Ma trận đề${mx.file?` <span class="mute small">(${esc(mx.file)})</span>`:""}</h2>
+ <div class="small mute" style="margin-bottom:6px">${mx.rows.length?"Kiểm tra và sửa trực tiếp từng dòng bên dưới (dạng bài, số câu, chủ đề, mức độ, đặc tả). Dòng có ⚠ sẽ bị bỏ qua cho đến khi sửa xong.":"Chưa có dòng nào. Chọn file Excel ở trên rồi bấm Đọc file, hoặc bấm Thêm dòng để tự nhập ma trận."}</div>
+ ${mx.rows.map((r,i)=>`<div class="card" style="padding:12px;margin:8px 0;${r.w?"border-color:var(--bad)":""}"><div class="row sb" style="gap:8px"><span id="mxs_${i}" class="small">${mxSt(r)}</span><button class="btn d s" data-act="mxDel" data-i="${i}">Xóa dòng</button></div>${r.ty?`<div class="mute small">Trong file: ${esc(r.ty)}</div>`:""}
+ <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin-top:6px"><div><label class="small mute" for="mr_k${i}">Dạng bài</label><select id="mr_k${i}" data-mxr="k" data-i="${i}"><option value="">– Bỏ qua dòng này –</option>${mxKinds.map(([k,l])=>`<option value="${k}" ${r.k==k?"selected":""}>${esc(l)}</option>`).join("")}</select></div>
+ <div><label class="small mute" for="mr_n${i}">Số câu</label><input id="mr_n${i}" type="number" min="0" max="60" data-mxr="n" data-i="${i}" value="${r.n||0}"></div>
+ <div style="display:flex;align-items:flex-end"><label style="margin:0;display:flex;gap:6px;align-items:center;font-weight:500"><input type="checkbox" style="width:auto" data-mxr="tl" data-i="${i}" ${r.tl?"checked":""}>Câu tự luận trong ma trận</label></div></div>
+ <label class="small mute" for="mr_t${i}">Chủ đề / chủ điểm</label><input id="mr_t${i}" data-mxr="topic" data-i="${i}" value="${esc(r.topic||"")}">
+ <label class="small mute" for="mr_l${i}">Mức độ nhận thức</label><input id="mr_l${i}" data-mxr="lvl" data-i="${i}" value="${esc(r.lvl||"")}" placeholder="Ví dụ: Biết 2 câu, Hiểu 3 câu">
+ <details style="margin-top:6px"><summary class="small">Đặc tả yêu cầu cần đạt ${r.spec?"(có)":"(chưa có)"}</summary><textarea data-mxr="spec" data-i="${i}" rows="3" aria-label="Đặc tả">${esc(r.spec||"")}</textarea></details></div>`).join("")}
+ <button class="btn o s" data-act="mxAdd">+ Thêm dòng</button>
+ ${hasTL?`<label style="display:flex;gap:8px;align-items:center;font-weight:500;margin:6px 0"><input type="checkbox" style="width:auto" data-mx="tl" ${mx.tl!==false?"checked":""}>Chuyển phần tự luận (điền dạng từ, viết lại câu) thành câu trắc nghiệm để học sinh làm trực tiếp trong app</label>`:""}<div id="wz_tot" style="padding:8px 0">${mxTotH()}</div>
+ ${mx.rows.length?`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px"><div><label for="mx_t" class="small mute">Tên đề</label><input id="mx_t" data-mx="title" value="${esc(mx.title)}"></div><div><label for="mx_m" class="small mute">Thời gian làm bài (phút)</label><input id="mx_m" type="number" min="5" max="180" data-mx="min" value="${mx.min||""}"></div><div style="grid-column:1/-1"><label for="mx_s" class="small mute">Phạm vi kiến thức (nên điền, vì ma trận thường không ghi Unit)</label><input id="mx_s" data-mx="scope" value="${esc(mx.scope||"")}" placeholder="Ví dụ: Global Success 12, Unit 1–3"></div></div>`:""}</div>`}
+
+/* ===== Kho đề ===== */
+const TYL={thpt:"Thi THPT",ktdk:"KTĐK",kttx:"KTTX",luyen:"Luyện tập",khac:"Khác"},TYC={thpt:"#1f5bff",ktdk:"#7c3aed",kttx:"#0d9488",luyen:"#d97706",khac:"#64748b"};
+let BK={q:"",g:"",ty:"",src:"",sort:"new",grp:true,det:null,dt:null,menu:null,del:null};
+function exGuess(e){const t=String(e.title||"").toLowerCase();let g="";const m=t.match(/(?:lớp|khối|lop|khoi|grade)\s*(\d{1,2})/)||t.match(/\bk(\d{1,2})\b/);if(m&&+m[1]>=6&&+m[1]<=12)g=m[1];
+ const ty=/kt\s*đk|ktđk|định k[ìỳ]|giữa k[ìỳ]|cuối k[ìỳ]|ghki|gkii|ckii/.test(t)?"ktdk":/kttx|thường xuyên|15 phút/.test(t)?"kttx":(e.qs||[]).length==40||/thpt|tốt nghiệp/.test(t)?"thpt":/luyện|bài tập|unit|practice/.test(t)?"luyen":"khac";return{g,ty}}
+function exMeta(e){const q=exGuess(e);return{g:e.g!=null?String(e.g):q.g,ty:e.ty||q.ty,un:e.un||"",ts:e.ts||0}}
+const exLevel=g=>g?(+g>=10?"THPT":"THCS"):"";
+function bkCard(x){const e=x.e,m=x.m,n=S.a.filter(a=>a.eid==e.id).length,chk=e.qs.filter(q=>q.chk).length,mn=BK.menu==e.id;
+ return `<div class="card bkc" style="border-left:4px solid ${TYC[m.ty]};padding:14px;margin-bottom:10px"><div class="row sb" style="align-items:flex-start;flex-wrap:nowrap;gap:12px"><div style="min-width:0;flex:1"><button class="lnk" data-act="bkOpen" data-id="${e.id}">${esc(e.title)}</button>
+ <div class="row" style="gap:6px;margin:6px 0 4px">${m.g?`<span class="tag b">Khối ${m.g}</span>`:'<span class="tag w">Chưa phân loại</span>'}<span class="tag" style="background:${TYC[m.ty]}22;color:${TYC[m.ty]}">${TYL[m.ty]}</span>${e.src=="ai"?'<span class="tag w">AI tạo</span>':e.src=="scan"?'<span class="tag w">Số hóa</span>':'<span class="tag">Tự soạn</span>'}${chk?`<span class="tag w">${chk} câu cần kiểm tra</span>`:""}</div>
+ <div class="mute small">${e.qs.length} câu${m.un?" · "+esc(m.un):""}${m.ts?" · tạo "+new Date(m.ts).toLocaleDateString("vi-VN"):""} · ${n?"đã giao "+n+" lần":"chưa giao"}</div></div>
+ <div class="row" style="position:relative;flex-wrap:nowrap;gap:6px"><button class="btn s" data-act="bkAsg" data-id="${e.id}">Giao bài</button><button class="btn o s" data-act="bkMenu" data-id="${e.id}" aria-label="Thao tác khác" aria-expanded="${mn}">⋯</button>
+ ${mn?`<div class="bkm" role="menu"><button data-act="vopen" data-id="${e.id}">Xem chia đôi màn hình</button><button data-act="topen" data-id="${e.id}">Làm thử</button><button data-act="dxl" data-id="${e.id}" data-a="0">Xuất Word (đề)</button><button data-act="dxl" data-id="${e.id}" data-a="1">Xuất Word (có đáp án)</button><button data-act="bkDel" data-id="${e.id}" style="color:var(--bad)">${BK.del==e.id?"Bấm lần nữa để xóa (cả bài đã giao)":"Xóa đề"}</button></div>`:""}</div></div></div>`}
+function bkRows(){const q=nrm(BK.q),L=S.e.map((e,i)=>({e,i,m:exMeta(e)})).filter(x=>(!BK.g||(BK.g=="none"?!x.m.g:x.m.g==BK.g))&&(!BK.ty||x.m.ty==BK.ty)&&(!BK.src||x.e.src==BK.src)&&(!q||nrm(x.e.title+" "+x.m.un).includes(q)));
+ const s=BK.sort;L.sort((a,b)=>s=="old"?(a.m.ts-b.m.ts)||(a.i-b.i):s=="name"?a.e.title.localeCompare(b.e.title,"vi"):s=="qs"?b.e.qs.length-a.e.qs.length:(b.m.ts-a.m.ts)||(b.i-a.i));return L}
+function bkList(){const L=bkRows();if(!L.length)return `<div class="card empty">Không có đề nào phù hợp bộ lọc.<br><br><button class="btn o" data-act="bkClear">Xóa bộ lọc</button></div>`;
+ const head=`<div class="mute small" style="margin:4px 0 8px">Hiển thị ${L.length} / ${S.e.length} đề${BK.q||BK.g||BK.ty||BK.src?` · <button class="lnk" style="font-size:.85rem;font-weight:600;color:var(--pri)" data-act="bkClear">Xóa bộ lọc</button>`:""}</div>`;
+ if(!BK.grp)return head+L.map(bkCard).join("");
+ const order=["12","11","10","9","8","7","6",""];return head+order.map(g=>{const X=L.filter(x=>x.m.g==g);return X.length?`<details open class="bkg"><summary><b>${g?"Khối "+g+" · "+exLevel(g):"Chưa phân loại"}</b> <span class="mute small">${X.length} đề</span></summary>${X.map(bkCard).join("")}</details>`:""}).join("")}
+function bankV(){
+ if(BK.det&&ex(BK.det))return bkDetail(ex(BK.det));BK.det=null;
+ if(!S.e.length)return `<div class="row sb"><h1>Kho đề đã lưu</h1><button class="btn" data-go="create">+ Tạo đề</button></div><div class="card empty">Kho đề đang trống.<br><br><button class="btn" data-go="create">Tạo đề đầu tiên</button></div>`;
+ const M=S.e.map(exMeta),cg={},ct={};M.forEach(m=>{cg[m.g||"none"]=(cg[m.g||"none"]||0)+1;ct[m.ty]=(ct[m.ty]||0)+1});
+ const chip=(k,v,l,n)=>`<button class="fc" data-act="bkF" data-k="${k}" data-v="${v}" aria-pressed="${BK[k]==v}">${l}${n!=null?` <span class="mute">${n}</span>`:""}</button>`;
+ return `<div class="row sb"><h1>Kho đề đã lưu</h1><button class="btn" data-go="create">+ Tạo đề</button></div>
+ <div class="card"><div class="row"><input id="bk_q" type="search" data-bk="q" value="${esc(BK.q)}" placeholder="Tìm theo tên đề hoặc Unit..." aria-label="Tìm đề" style="flex:2;min-width:180px"><select data-bk="src" aria-label="Nguồn đề" style="flex:1;min-width:130px">${[["","Mọi nguồn"],["ai","AI tạo"],["scan","Số hóa từ file"],["teacher","Tự soạn"]].map(([k,l])=>`<option value="${k}" ${BK.src==k?"selected":""}>${l}</option>`).join("")}</select><select data-bk="sort" aria-label="Sắp xếp" style="flex:1;min-width:130px">${[["new","Mới nhất"],["old","Cũ nhất"],["name","Tên A–Z"],["qs","Nhiều câu nhất"]].map(([k,l])=>`<option value="${k}" ${BK.sort==k?"selected":""}>${l}</option>`).join("")}</select></div>
+ <div class="row" style="gap:6px;margin-top:10px"><span class="small mute" style="min-width:56px">Khối</span>${chip("g","","Tất cả",S.e.length)}${["12","11","10","9","8","7","6"].filter(g=>cg[g]).map(g=>chip("g",g,"Khối "+g,cg[g])).join("")}${cg.none?chip("g","none","Chưa phân loại",cg.none):""}</div>
+ <div class="row" style="gap:6px;margin-top:8px"><span class="small mute" style="min-width:56px">Loại đề</span>${chip("ty","","Tất cả")}${Object.keys(TYL).filter(k=>ct[k]).map(k=>chip("ty",k,TYL[k],ct[k])).join("")}</div>
+ <label style="margin:10px 0 0;display:flex;gap:8px;align-items:center;font-weight:500"><input type="checkbox" style="width:auto" data-bk="grp" ${BK.grp?"checked":""}>Gom nhóm theo khối</label></div>
+ <div id="bklist">${bkList()}</div>`}
+function bkDetail(e){const d=BK.dt||(BK.dt={title:e.title,...(m=>({g:m.g,ty:m.ty,un:m.un}))(exMeta(e))}),n=S.a.filter(a=>a.eid==e.id).length;
+ return `<div class="row"><button class="btn o s" data-act="bkBack">← Kho đề</button></div>
+ <div class="card"><h2>Thông tin đề</h2><label for="bk_t">Tên đề</label><input id="bk_t" data-bkd="title" value="${esc(d.title)}">
+ <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px"><div><label for="bk_g">Khối</label><select id="bk_g" data-bkd="g"><option value="">Chưa phân loại</option>${[6,7,8,9,10,11,12].map(g=>`<option value="${g}" ${d.g==g?"selected":""}>Khối ${g} (${exLevel(g)})</option>`).join("")}</select></div>
+ <div><label for="bk_y">Loại đề</label><select id="bk_y" data-bkd="ty">${Object.entries(TYL).map(([k,l])=>`<option value="${k}" ${d.ty==k?"selected":""}>${l}</option>`).join("")}</select></div>
+ <div><label for="bk_u">Unit / chủ đề</label><input id="bk_u" data-bkd="un" value="${esc(d.un)}" placeholder="Ví dụ: Unit 4"></div></div>
+ <div class="mute small" style="margin-top:8px">${e.qs.length} câu · ${e.src=="ai"?"AI tạo":e.src=="scan"?"Số hóa từ file":"Tự soạn"}${e.ts?" · tạo "+new Date(e.ts).toLocaleDateString("vi-VN"):""} · ${n?"đã giao "+n+" lần":"chưa giao"}</div>
+ <div class="row" style="margin-top:12px"><button class="btn" data-act="bkSave">Lưu thay đổi</button></div></div>
+ <div class="card"><h2>Thao tác</h2><div class="row"><button class="btn" data-act="bkAsg" data-id="${e.id}">Giao bài</button><button class="btn o" data-act="vopen" data-id="${e.id}">Xem chia đôi màn hình</button><button class="btn o" data-act="topen" data-id="${e.id}">Làm thử</button><button class="btn o" data-act="dxl" data-id="${e.id}" data-a="0">Xuất Word (đề)</button><button class="btn o" data-act="dxl" data-id="${e.id}" data-a="1">Xuất Word (có đáp án)</button><button class="btn d" data-act="bkDel" data-id="${e.id}">${BK.del==e.id?"Bấm lần nữa để xóa (cả bài đã giao)":"Xóa đề"}</button></div></div>
+ <div class="card"><h2>Câu hỏi (${e.qs.length})</h2>${e.qs.map((q,i)=>qHtml(q,i+1)).join("<hr>")}</div>`}
+
+/* ===== Xuất đề ra Word ===== */
+const xe=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+function dRuns(t,b,u,c){return String(t).split(/(\*\*[\s\S]+?\*\*|<u>[\s\S]+?<\/u>)/).filter(Boolean).map(p=>{
+ if(/^\*\*[\s\S]+\*\*$/.test(p))return dRuns(p.slice(2,-2),1,u,c);
+ if(/^<u>[\s\S]+<\/u>$/.test(p))return dRuns(p.slice(3,-4),b,1,c);
+ return `<w:r><w:rPr>${b?"<w:b/>":""}${c?`<w:color w:val="${c}"/>`:""}${u?'<w:u w:val="single"/>':""}</w:rPr><w:t xml:space="preserve">${xe(p.replace(/\*\*|<\/?u>/g,""))}</w:t></w:r>`}).join("")}
+function dP(t,o={}){return `<w:p><w:pPr>${o.keep?"<w:keepNext/>":""}<w:spacing w:before="${o.bf||0}" w:after="${o.af??60}"/>${o.ind?`<w:ind w:left="${o.ind}"/>`:""}${o.c?'<w:jc w:val="center"/>':""}</w:pPr>${t===""?"":dRuns(t,o.b,0,o.col)}</w:p>`}
+function dTbl(rows){const bd=["top","left","bottom","right","insideH","insideV"].map(k=>`<w:${k} w:val="single" w:sz="4" w:space="0" w:color="808080"/>`).join("");
+ return `<w:tbl><w:tblPr><w:tblW w:w="0" w:type="auto"/><w:jc w:val="center"/><w:tblBorders>${bd}</w:tblBorders></w:tblPr>${rows.map((r,ri)=>`<w:tr>${r.map(c=>`<w:tc><w:tcPr><w:tcW w:w="800" w:type="dxa"/>${ri%2==0?'<w:shd w:val="clear" w:color="auto" w:fill="EEEEEE"/>':""}</w:tcPr>${dP(String(c),{c:1,af:20,b:ri%2==0})}</w:tc>`).join("")}</w:tr>`).join("")}</w:tbl>`}
+async function buildDocx(e,withAns){
+ if(!window.JSZip)await loadJS(JSZ);
+ const qs=e.qs,n=qs.length,B=blocks(qs),min=n==40?50:Math.max(5,Math.round(n*1.25));let x="";
+ x+=dP(e.title,{c:1,b:1,af:60})+dP(`Thời gian làm bài: ${min} phút – Số câu: ${n}${withAns?" – (Bản có đáp án)":""}`,{c:1,af:60})+dP("Họ và tên: ................................................   Lớp: ...............   Điểm: ..........",{c:1,af:160});
+ let prev="";
+ B.forEach(b=>{const lo=b.items[0].n,hi=b.items[b.items.length-1].n,first=b.items[0].q,kind=first.p?"p":first.q.includes("\n")?"a":"m";
+  if(kind=="p")x+=dP(`Read the following text and mark the letter A, B, C or D on your answer sheet to indicate the correct answer to each of the questions from ${lo} to ${hi}.`,{b:1,bf:140,keep:1})+b.left.split("\n").map(l=>dP(l,{af:40})).join("");
+  else if(kind=="a"){if(prev!="a")x+=dP("Mark the letter A, B, C or D on your answer sheet to indicate the best arrangement of utterances or sentences to make a meaningful exchange or text in each of the following questions.",{b:1,bf:140,keep:1})}
+  else x+=dP("Mark the letter A, B, C or D on your answer sheet to indicate the correct answer to each of the following questions.",{b:1,bf:140,keep:1});
+  prev=kind;
+  b.items.forEach(({q,n:k})=>{
+   const lines=q.q.split("\n"),blankOnly=/^\(\d+\) _+$/.test(lines[0])||/^Chọn câu phù hợp/.test(lines[0]);
+   if(kind=="a")x+=dP(`Question ${k}.`,{b:1,bf:100,keep:1})+lines.map(l=>dP(l,{ind:360,af:20,keep:1})).join("");
+   else if(blankOnly)x+=dP(`Question ${k}.`,{b:1,bf:100,keep:1});
+   else x+=dP(`**Question ${k}.** ${lines[0]}`,{bf:100,keep:1})+lines.slice(1).map(l=>dP(l,{ind:360,af:20,keep:1})).join("");
+   q.o.forEach((o,i)=>{const ok=withAns&&i==q.a;x+=dP(`${"ABCD"[i]}. ${o}`,{ind:360,af:20,col:ok?"FF0000":"",b:ok})})})});
+ if(withAns){const rows=[];for(let s=0;s<n;s+=10){const r=qs.slice(s,s+10);rows.push(r.map((_,i)=>s+i+1));rows.push(r.map(q=>"ABCD"[q.a]))}
+  x+=dP("ĐÁP ÁN",{c:1,b:1,bf:300,af:100,keep:1})+dTbl(rows)}
+ x+=dP("--- HẾT ---",{c:1,bf:240});
+ const ns='xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"',H='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+ const z=new JSZip();
+ z.file("[Content_Types].xml",H+'<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>');
+ z.file("_rels/.rels",H+'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>');
+ z.file("word/_rels/document.xml.rels",H+'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>');
+ z.file("word/styles.xml",H+`<w:styles ${ns}><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:cs="Times New Roman" w:eastAsia="Times New Roman"/><w:sz w:val="24"/><w:szCs w:val="24"/><w:lang w:val="en-US" w:eastAsia="vi-VN" w:bidi="ar-SA"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="60" w:line="264" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style></w:styles>`);
+ z.file("word/document.xml",H+`<w:document ${ns}><w:body>${x}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>`);
+ return z.generateAsync({type:"uint8array",compression:"DEFLATE"})
+}
+async function exportDocx(e,withAns){
+ if(!DL)return toast("Trình duyệt chưa cho tải file từ trang này.");
+ try{toast("Đang tạo file Word...");const data=await buildDocx(e,withAns);
+  const nm=String(e.title||"de-thi").normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[đĐ]/g,"d").replace(/[^a-zA-Z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,50)||"de-thi";
+  await DL.save({filename:nm+(withAns?"-co-dap-an":"")+".docx",data});toast("Đã lưu file Word.")
+ }catch(x){if(!x||x.code!="declined")toast("Không tạo được file Word, hãy thử lại.")}
+}
+
+/* ===== Quản lý lớp ===== */
+let CD="",CT="st",CDX="",CDRM=-1;
+const nn=s=>String(s||"").normalize("NFC").trim().replace(/\s+/g," ").toLowerCase();
+const cAsg=c=>S.a.filter(a=>a.cid==c.id);
+const bestSub=(a,name)=>{const L=a.subs.filter(s=>nn(s.name)==nn(name));return L.length?L.reduce((x,y)=>y.sc>x.sc?y:x):null};
+const r1=v=>Math.round(v*10)/10;
+const mean=a=>a.length?r1(a.reduce((x,y)=>x+y,0)/a.length):null;
+const stuAvg=(c,n)=>mean(cAsg(c).map(a=>bestSub(a,n)).filter(Boolean).map(b=>b.sc));
+const rank=v=>v==null||v===""?"":v>=8?"Giỏi":v>=6.5?"Khá":v>=5?"Trung bình":"Yếu";
+function cStats(c){const A=cAsg(c),sc=[];let sub=0;c.st.forEach(n=>A.forEach(a=>{const b=bestSub(a,n);if(b){sc.push(b.sc);sub++}}));return{A,open:A.filter(a=>!aClosed(a)).length,avg:mean(sc),rate:A.length&&c.st.length?Math.round(sub/(A.length*c.st.length)*100):null}}
+const cTitle=a=>a.title||(ex(a.eid)||{}).title||"(đề đã xóa)";
+function cdet(){
+ const c=cls(CD);if(!c)return `<div class="card empty">Không tìm thấy lớp.<br><br><button class="btn" data-go="classes">Về danh sách lớp</button></div>`;
+ const st=cStats(c),A=st.A,ex2=[...new Set(A.flatMap(a=>a.subs.map(s=>s.name)).filter(n=>!c.st.some(x=>nn(x)==nn(n))))];
+ const stats=`<div class="grid"><div class="card stat"><span>Học sinh</span><b>${c.st.length}</b></div><div class="card stat"><span>Bài đã giao</span><b>${A.length}</b><small class="mute">${st.open} đang mở</small></div><div class="card stat"><span>Tỷ lệ nộp bài</span><b>${st.rate==null?"–":st.rate+"%"}</b></div><div class="card stat"><span>Điểm TB (thang 10)</span><b>${st.avg==null?"–":st.avg}</b></div></div>`;
+ const tabs=[["st","Học sinh ("+c.st.length+")"],["as","Bài giao ("+A.length+")"],["sc","Bảng điểm"]];
+ let body="";
+ if(CT=="st")body=`<div class="card"><div class="row"><input id="cd_n" placeholder="Họ và tên học sinh mới" style="flex:1;min-width:200px"><button class="btn" data-act="cAddS">+ Thêm học sinh</button></div>
+  ${c.st.length?`<div style="overflow:auto;margin-top:10px"><table><tr><th>STT</th><th>Mã HS</th><th>Họ và tên</th><th>Ngày sinh</th><th>SĐT</th><th>Đã nộp</th><th>Điểm TB</th><th></th></tr>${c.st.map((n,i)=>{const f=(c.info||{})[n]||{},got=A.filter(a=>bestSub(a,n)).length,av=stuAvg(c,n);return `<tr><td>${i+1}</td><td>${esc(f.code)}</td><td>${esc(n)}</td><td>${esc(f.dob)}</td><td>${esc(f.phone)}</td><td>${got}/${A.length}</td><td>${av==null?"–":av}</td><td>${CDRM===i?`<button class="btn d s" data-act="cRm2" data-i="${i}">Xác nhận xóa</button> <button class="btn o s" data-act="cRm0">Hủy</button>`:`<button class="btn o s" data-act="cRm" data-i="${i}">Xóa</button>`}</td></tr>`}).join("")}</table></div>`:`<div class="empty">Lớp chưa có học sinh. Thêm từng em ở trên hoặc tạo lại lớp từ file Excel.</div>`}</div>`;
+ if(CT=="as")body=A.length?[...A].reverse().map(a=>{const s=aStatus(a),open=CDX==a.id,done=c.st.filter(n=>bestSub(a,n)),miss=c.st.filter(n=>!bestSub(a,n)),av=mean(done.map(n=>bestSub(a,n).sc));
+  return `<div class="card"><div class="row sb"><div><b>${esc(cTitle(a))}</b> <span class="tag ${s[1]}">${s[0]}</span><div class="mute small">${a.code?"Mã bài: <b>"+a.code+"</b> · ":""}Đã nộp ${done.length}/${c.st.length}${av==null?"":" · TB "+(SC(a)==100?r1(av*10)+"/100":av+"/10")}${a.set&&a.set.close?" · đóng "+esc(a.set.close.replace("T"," ")):""}</div></div><div class="row"><button class="btn o s" data-act="cax" data-id="${a.id}">${open?"Ẩn chi tiết":"Ai đã nộp?"}</button><button class="btn s" data-act="aopen" data-id="${a.id}">Xem kết quả</button></div></div>
+  ${open?`<div class="grid" style="margin-top:10px;align-items:start"><div><b>Đã nộp (${done.length})</b>${done.length?`<table>${done.map(n=>{const b=bestSub(a,n);return `<tr><td>${esc(n)}</td><td>${dsc(a,b)}/${SC(a)}</td></tr>`}).join("")}</table>`:`<div class="mute small">Chưa có ai.</div>`}</div><div><b>Chưa nộp (${miss.length})</b>${miss.length?`<div class="small" style="margin-top:6px">${miss.map(esc).join(", ")}</div>`:`<div class="mute small">Cả lớp đã nộp.</div>`}</div></div>`:""}</div>`}).join(""):`<div class="card empty">Lớp chưa được giao bài nào.<br><br><button class="btn" data-act="cAssign">Giao bài cho lớp này</button></div>`;
+ if(CT=="sc")body=A.length&&c.st.length?`<div class="card" style="overflow:auto"><table><tr><th>STT</th><th>Họ và tên</th>${A.map(a=>`<th title="${esc(cTitle(a))}">${esc(cTitle(a).slice(0,18))}<div class="small mute">/${SC(a)}</div></th>`).join("")}<th>TB (/10)</th><th>Xếp loại</th></tr>${c.st.map((n,i)=>{const av=stuAvg(c,n);return `<tr><td>${i+1}</td><td>${esc(n)}</td>${A.map(a=>{const b=bestSub(a,n);if(!b)return `<td class="mute">–</td>`;const pass=a.set?b.n?b.cor/b.n*100>=+a.set.pass:true:true;return `<td style="${pass?"":"color:var(--bad);font-weight:600"}">${dsc(a,b)}</td>`}).join("")}<td><b>${av==null?"–":av}</b></td><td>${rank(av)}</td></tr>`}).join("")}</table>${ex2.length?`<p class="small mute">Có ${ex2.length} bài nộp có tên không khớp danh sách lớp (${ex2.map(esc).join(", ")}). Các bài này chỉ có trong file Excel xuất ra.</p>`:""}<p class="small mute">Điểm lấy lần làm cao nhất của mỗi bài. Màu đỏ: dưới mức đạt của bài. Xếp loại tham khảo: Giỏi từ 8, Khá từ 6.5, Trung bình từ 5.</p></div>`:`<div class="card empty">Cần có học sinh và ít nhất một bài giao để xem bảng điểm.</div>`;
+ return `<div class="row sb" style="margin-bottom:6px"><div><button class="btn o s" data-go="classes">← Danh sách lớp</button><h1 style="margin-top:8px">${esc(c.n)} <span class="tag b">Khối ${c.g}</span></h1></div><div class="row"><button class="btn" data-act="cAssign">Giao bài cho lớp này</button><button class="btn o" data-act="xGrades" data-id="${c.id}">Xuất điểm ra Excel</button></div></div>${stats}
+ <div class="tabs" style="display:inline-flex;margin-bottom:12px">${tabs.map(([k,l])=>`<button data-act="ctab" data-t="${k}" aria-pressed="${CT==k}">${l}</button>`).join("")}</div>${body}`
+}
+V.cdet=cdet;
+async function exportGrades(cid){
+ const c=cls(cid);if(!c)return;if(!DL)return toast("Trình duyệt chưa cho tải file từ trang này.");
+ try{if(!window.XLSX)await loadJS(XLS);
+  const A=cAsg(c),ext=[...new Set(A.flatMap(a=>a.subs.map(s=>s.name)).filter(n=>!c.st.some(x=>nn(x)==nn(n))))];
+  const hc=c.st.some(n=>((c.info||{})[n]||{}).code)?1:0;
+  const H=["STT",...(hc?["Mã HS"]:[]),"Họ và tên",...A.map(a=>cTitle(a)+" (/"+SC(a)+")"),"Số bài đã nộp","Điểm TB (thang 10)","Xếp loại"];
+  const row=(n,i,ex1)=>{const bs=A.map(a=>bestSub(a,n)),got=bs.filter(Boolean),av=mean(got.map(b=>b.sc));return [ex1?"":i+1,...(hc?[ex1?"":((c.info||{})[n]||{}).code||""]:[]),n+(ex1?" (ngoài danh sách)":""),...bs.map((b,k)=>b?+dsc(A[k],b):""),got.length,av==null?"":av,rank(av)]};
+  const rows=[...c.st.map((n,i)=>row(n,i)),...ext.map(n=>row(n,0,1))],na2=A.length;
+  const col=k=>{const v=rows.slice(0,c.st.length).map(r=>r[k]).filter(x=>x!=="");return v.length?mean(v):""};
+  const avgRow=["",...(hc?[""]:[]),"Trung bình lớp (chỉ học sinh trong danh sách)",...A.map((_,k)=>col(2+hc+k)),"",col(3+hc+na2),""];
+  const det=[["Họ và tên","Bài giao","Lần làm","Điểm","Số câu đúng","Tổng số câu","Nộp lúc"]];
+  A.forEach(a=>a.subs.forEach(s=>det.push([s.name,cTitle(a),s.attempt||1,+dsc(a,s),s.cor??"",s.n??"",s.at?new Date(s.at).toLocaleString("vi-VN"):""])));
+  const wb=XLSX.utils.book_new(),w1=XLSX.utils.aoa_to_sheet([H,...rows,avgRow]),w2=XLSX.utils.aoa_to_sheet(det);
+  w1["!cols"]=[{wch:6},...(hc?[{wch:12}]:[]),{wch:28},...A.map(()=>({wch:18})),{wch:14},{wch:18},{wch:12}];w2["!cols"]=[{wch:28},{wch:30},{wch:9},{wch:8},{wch:12},{wch:12},{wch:20}];
+  XLSX.utils.book_append_sheet(wb,w1,"Bảng điểm");XLSX.utils.book_append_sheet(wb,w2,"Chi tiết lượt làm");
+  const nm=String(c.n).normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[đĐ]/g,"d").replace(/[^a-zA-Z0-9]+/g,"-").replace(/^-|-$/g,"")||"lop";
+  await DL.save({filename:"bang-diem-"+nm+".xlsx",data:XLSX.write(wb,{type:"array",bookType:"xlsx"})});toast("Đã lưu bảng điểm lớp "+c.n+".")
+ }catch(x){if(!x||x.code!="declined")toast("Không tạo được file Excel, hãy thử lại.")}
+}
+
+function na(t,m){return `<h1>${t}</h1><div class="card empty"><span class="tag w">Chưa hoạt động</span><p>${m}</p></div>`}
+function qTxt(q,n){const L=q.q.split("\n");return "<b>"+n+".</b> "+fm(L[0])+(L.length>1?'<div style="white-space:pre-wrap;margin:4px 0 6px 12px">'+fm(L.slice(1).join("\n"))+"</div>":"")}
+let LP="";function qHtml(q,n){if(n==1)LP="";const sp=q.p&&q.p!=LP;LP=q.p||"";return `<div style="margin:8px 0">${sp?'<div class="small mute" style="margin-bottom:4px;white-space:pre-wrap">'+fm(q.p)+'</div>':""}${qTxt(q,n)}${q.chk?' <span class="tag w">cần kiểm tra đáp án</span>':""}${q.o.map((o,i)=>`<div style="padding:2px 0 2px 12px;${i==q.a?"color:var(--ok);font-weight:700":""}">${"ABCD"[i]}. ${fm(o)}${i==q.a?" ✓":""}</div>`).join("")}</div>`}
+let AI=null,busy=0;
+function impText(t,src){try{let j=JSON.parse(t.replace(/```json|```/g,"").trim());if(!Array.isArray(j)||!j.length)throw 0;j.forEach(q=>{if(typeof q.q!="string"||!Array.isArray(q.o)||q.o.length!=4||!Number.isInteger(q.a)||q.a<0||q.a>3)throw 0;q.o=q.o.map(String)});E.qs=E.qs.concat(j.map(q=>({p:typeof q.p=="string"?q.p:"",q:q.q,o:q.o,a:q.a})));E.src=src||"ai";toast("Đã nhập "+j.length+" câu. Hãy đọc lại trước khi giao.");render()}catch(x){toast("Kết quả chưa đúng định dạng, hãy thử lại.")}}
+const MAM="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js",PDFJ="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js",PDFW="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+function loadJS(u){return new Promise((res,rej)=>{if(document.querySelector('script[src="'+u+'"]'))return res();const s=document.createElement("script");s.src=u;s.onload=res;s.onerror=()=>rej(new Error("lib"));document.head.append(s)})}
+async function fileText(f){const n=f.name.toLowerCase();if(n.endsWith(".txt"))return f.text();if(n.endsWith(".docx")){const r=await docxText(f);REDN=r.red;return r.text}if(n.endsWith(".pdf")){await loadJS(PDFJ);pdfjsLib.GlobalWorkerOptions.workerSrc=PDFW;const d=await pdfjsLib.getDocument({data:await f.arrayBuffer()}).promise;let t="";for(let i=1;i<=Math.min(d.numPages,20);i++){const pg=await d.getPage(i),tc=await pg.getTextContent();try{await pg.getOperatorList()}catch(e){}const C={},isB=fn=>{if(fn in C)return C[fn];let b=false;try{const ft=pg.commonObjs.get(fn);b=!!(ft.bold||/bold|black|heavy/i.test(ft.name||""))}catch(e){}return C[fn]=b};let op=0;for(const it of tc.items){const b=isB(it.fontName);if(it.str.trim()){if(b&&!op){t+="**";op=1}else if(!b&&op){t+="**";op=0}}t+=it.str+(it.hasEOL?"\n":"")}if(op)t+="**";t+="\n"}return t}throw new Error("fmt")}
+let REDN=0;const JSZ="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
+async function docxText(f){await loadJS(JSZ);const z=await JSZip.loadAsync(await f.arrayBuffer());const x=await z.file("word/document.xml").async("string");const d=new DOMParser().parseFromString(x,"application/xml");const W="http://schemas.openxmlformats.org/wordprocessingml/2006/main",g=(e,n)=>e.getElementsByTagNameNS(W,n);const isRed=h=>{if(!h)return false;if(/^red$/i.test(h))return true;if(!/^[0-9a-f]{6}$/i.test(h))return false;const r=parseInt(h.slice(0,2),16),gg=parseInt(h.slice(2,4),16),b=parseInt(h.slice(4,6),16);return r>=176&&gg<=112&&b<=112};const on=e=>{if(!e)return false;const v=e.getAttributeNS(W,"val");return v!=="0"&&v!=="false"&&v!=="none"};let out="",red=0;
+for(const p of g(d,"p")){let line="",st=[0,0,0];const sync=w=>{if(w.every((v,i)=>v==st[i]))return;if(st[2])line+="</u>";if(st[1])line+="**";if(st[0])line+="\u27e7";if(w[0])line+="\u27e6";if(w[1])line+="**";if(w[2])line+="<u>";if(w[0]&&!st[0])red++;st=w};
+for(const r of g(p,"r")){const rp=g(r,"rPr")[0];let w=[0,0,0];if(rp){const c=g(rp,"color")[0],h=g(rp,"highlight")[0],s=g(rp,"shd")[0];w[0]=((c&&isRed(c.getAttributeNS(W,"val")))||(h&&isRed(h.getAttributeNS(W,"val")))||(s&&isRed(s.getAttributeNS(W,"fill"))))?1:0;w[1]=on(g(rp,"b")[0])?1:0;w[2]=on(g(rp,"u")[0])?1:0}
+let tx="";for(const n of r.childNodes){if(n.localName=="t")tx+=n.textContent;else if(n.localName=="tab")tx+=" ";else if(n.localName=="br")tx+="\n"}if(!tx)continue;if(tx.trim())sync(w);line+=tx}sync([0,0,0]);out+=line+"\n"}return{text:out,red}}
+let SM="";
+function fmtQ(s){return s.includes("\n")?s.replace(/^[ \t]*([a-e])[ \t]*[-–:)][ \t]*/gm,"$1. "):s}
+function parseScan(t){const j=JSON.parse(t.replace(/```json|```/g,"").trim());const P={};(j.passages||[]).forEach(p=>P[p.id]=String(p.text||""));const out=[];let bad=0;(j.questions||[]).forEach(q=>{const r=Number.isInteger(q.r)&&q.r>=0&&q.r<=3?q.r:null,a=Number.isInteger(q.a)?q.a:r;if(typeof q.q!="string"||!Array.isArray(q.o)||q.o.length!=4||!Number.isInteger(a)||a<0||a>3){bad++;return}out.push({n:q.n,p:q.pid&&P[q.pid]||"",q:fmtQ(q.q),o:q.o.map(String),a,r})});return{out,bad}}
+async function scanFile3(){if(busy)return;const f=($("fl")||{}).files&&$("fl").files[0],mode=val("am")||"key";
+if(!f)return toast("Hãy chọn một file .docx, .pdf hoặc .txt.");if(f.size>10485760)return toast("File lớn hơn 10 MB, hãy tách nhỏ.");
+if(mode=="red"&&!f.name.toLowerCase().endsWith(".docx"))return toast("Chữ bôi đỏ chỉ đọc được trong file Word (.docx). Với PDF hãy chọn bảng ĐÁP ÁN.");
+busy=1;REDN=0;SM="";let all=[],failed=[],bad=0;
+try{toast("Đang đọc file...");const t=(await fileText(f)).normalize("NFC").trim();
+if(t.length<80){busy=0;return toast("Không đọc được chữ trong file. Nếu là PDF scan (ảnh), hãy dùng bản Word hoặc PDF có chữ chọn được.")}
+if(mode=="red"&&!REDN){busy=0;return toast("Không tìm thấy chữ bôi đỏ nào trong file. Hãy kiểm tra lại hoặc chọn bảng ĐÁP ÁN.")}
+let ks=-1,mm;const re=/(ĐÁP ÁN|ANSWER KEY)/gi;while(mm=re.exec(t))ks=mm.index;const pm=t.search(/(?:(?:\*\*)?\d{1,2}\s*[.\-:)]\s*[A-D](?:\*\*)?\s+){8,}/),cd=[ks,pm].filter(x=>x>t.length*.5);ks=cd.length?Math.min(...cd):-1;
+const key=ks>=0?t.slice(ks):"",body=ks>=0?t.slice(0,ks).replace(/\*\*\s*$/,""):t,K={};
+if(mode=="key"){let m2;const rk=/(\d{1,3})\s*[.\-:)]\s*([A-D])\b/g;while(m2=rk.exec(key))K[+m2[1]]="ABCD".indexOf(m2[2]);if(!Object.keys(K).length)toast("Không thấy bảng ĐÁP ÁN ở cuối file, Claude sẽ tự chọn đáp án.",8000)}
+const parts=body.split(/(?<!\*)(?=(?:\*\*)?(?:Read the following|Mark the letter))/),ch=[];let cur="";parts.forEach(p=>{if(cur&&(cur+p).length>6000){ch.push(cur);cur=""}cur+=p});if(cur.trim())ch.push(cur);
+const want=new Set();let m3;const rq=/Question\s+(\d{1,3})\s*[.:]/g;while(m3=rq.exec(body))want.add(+m3[1]);
+const rule=mode=="red"?'Ký hiệu ⟦ ⟧ bao quanh phần chữ tô đỏ trong file gốc. Với mỗi câu, ghi vào "r" chỉ số 0-3 của đáp án nằm trong ⟦ ⟧ (nếu không có thì r=null); bỏ ký hiệu ⟦ ⟧ khỏi nội dung. ':mode=="key"?'Dùng BẢNG ĐÁP ÁN ở cuối để xác định "a" theo số câu. ':'Không có đáp án trong file nên tự chọn "a". ';
+for(let i=0;i<ch.length;i++){toast(`Claude đang số hóa phần ${i+1}/${ch.length}...`);
+const p=`Dưới đây là một phần đề thi tiếng Anh THPT trích từ file. Hãy chuyển thành JSON. Quy tắc: giữ nguyên nội dung câu hỏi và đáp án, chỉ sửa lỗi chữ rõ ràng do trích xuất. Không bỏ sót: mỗi "Question N" trong phần này phải có đúng một mục trong "questions". Mỗi câu có 4 đáp án A-D; bỏ ký hiệu A. B. C. D. khỏi nội dung đáp án. Ký hiệu ** bao quanh chữ IN ĐẬM và <u></u> bao quanh chữ gạch chân trong file gốc: hãy GIỮ nguyên các ký hiệu này quanh từ hoặc cụm từ in đậm/gạch chân nằm trong đoạn văn, trong câu hỏi và trong đáp án (ví dụ từ in đậm được hỏi nghĩa, "NOT", câu gạch chân cần diễn đạt lại), nhưng BỎ chúng ở nhãn "Question N.", nhãn đáp án "A." "B." "C." "D.", tiêu đề đề thi và dòng hướng dẫn "Read the following...". Không tự thêm in đậm. Trong đoạn văn "text", nối các dòng bị ngắt giữa chừng thành đoạn liền mạch, chỉ xuống dòng giữa các đoạn văn. "n" là số thứ tự câu gốc (Question 6 thì n=6); bỏ chữ "Question N." khỏi "q". Đoạn văn dùng chung (bài đọc, đoạn điền chỗ trống, thư, quảng cáo, đoạn có nhãn [I] [II]) ghi MỘT lần trong "passages" với id P1, P2...; câu liên quan có "pid". Với câu sắp xếp câu/hội thoại/thư: "q" gồm nhiều dòng, mỗi dòng ngăn cách bằng một ký tự xuống dòng thật. Dòng 1 là câu dẫn: lời chào mở đầu như "Dear Sir or Madam," nếu có, nếu không thì ghi "Sắp xếp các câu sau thành một đoạn hội thoại hoặc văn bản hoàn chỉnh:". Mỗi câu a, b, c, d, e nằm trên MỘT dòng riêng, viết dạng "a. nội dung" (đổi "a-" thành "a. "), giữ nguyên thứ tự a đến e như đề. Lời kết như "Yours faithfully," và tên người ký ghi ở các dòng cuối. Bốn đáp án A-D của câu này là chuỗi thứ tự như "c - a - d - b - e". Với câu điền chỗ trống, "q" ghi "Chỗ trống (số)". ${rule}Luôn trả "a" (chỉ số 0-3 của đáp án đúng, nếu chưa chắc thì chọn đáp án khả dĩ nhất). Chỉ trả về JSON thuần (không markdown) theo dạng:\n{"passages":[{"id":"P1","text":"..."}],"questions":[{"n":1,"pid":"P1","q":"...","o":["...","...","...","..."],"a":0,"r":null}]}\nNội dung:\n\n`+ch[i]+(mode=="key"&&key?"\n\nBẢNG ĐÁP ÁN:\n"+key.slice(0,1500):"");
+let ok=0;for(let k=0;k<2&&!ok;k++){try{const r=await AI(p,{modelTier:"default",cache:false});if(r.truncated)throw{code:"long"};const x=parseScan(r.text);if(!x.out.length)throw 0;bad+=x.bad;all=all.concat(x.out);ok=1}catch(e){if(e&&(e.code=="not_granted"||e.code=="rate_limited"))throw e}}
+if(!ok)failed.push(i+1)}
+let fix=0,unk=0;all.forEach(q=>{q.scan=1;if(mode=="key"){if(K[q.n]!=null){if(K[q.n]!=q.a)fix++;q.a=K[q.n]}else{q.chk=1;unk++}}else if(mode=="red"){if(q.r!=null)q.a=q.r;else{q.chk=1;unk++}}else{q.chk=1;unk++}});
+const got=new Set(all.map(q=>q.n)),miss=[...want].filter(n=>!got.has(n)).sort((a,b)=>a-b);all.sort((a,b)=>(a.n||0)-(b.n||0));
+if(!all.length)throw 0;
+E.qs=E.qs.filter(q=>!q.scan).concat(all);E.src="scan";busy=0;
+SM=`Đã số hóa ${all.length}/${want.size||"?"} câu.`+(miss.length?` Thiếu câu: ${miss.join(", ")}.`:" Đủ số câu.")+(failed.length?` Phần bị lỗi: ${failed.join(", ")}, hãy bấm Số hóa đề lại.`:"")+(bad?` Bỏ ${bad} câu thiếu dữ liệu.`:"")+(fix?` Đã chỉnh ${fix} đáp án theo bảng ĐÁP ÁN.`:"")+(unk?` ${unk} câu chưa có đáp án rõ ràng, đã gắn nhãn cần kiểm tra.`:"");render();toast(SM,15000)}
+catch(x){busy=0;if(all.length){all.forEach(q=>{q.scan=1;q.chk=1});E.qs=E.qs.filter(q=>!q.scan).concat(all);E.src="scan"}
+SM=(all.length?`Mới nhập được ${all.length} câu (gắn nhãn cần kiểm tra). `:"")+(x&&x.code=="not_granted"?"Bạn chưa cho phép trang gọi Claude.":x&&x.code=="rate_limited"?"Đang quá giới hạn, hãy thử lại sau ít phút.":"Không số hóa hết được file. Hãy kiểm tra định dạng và bấm Số hóa đề lại.");render();toast(SM,12000)}
+busy=0}
+function scanUI(){return `<div class="card" style="background:var(--warn);margin-top:14px"><b>Số hóa đề mẫu</b><div class="small">Tải lên file Word (.docx), PDF có chữ chọn được (.pdf) hoặc .txt. Claude đọc đề, tách câu hỏi, đoạn văn và đáp án (lấy từ bảng ĐÁP ÁN hoặc chữ tô đỏ trong file Word; PDF chỉ đọc được bảng ĐÁP ÁN). PDF dạng ảnh scan chưa đọc được. Hãy kiểm tra kỹ kết quả trước khi giao.</div></div><label for="fl">Chọn file đề</label><input id="fl" type="file" accept=".pdf,.docx,.txt"><label for="am">Đáp án nằm ở đâu trong file?</label><select id="am"><option value="key">Bảng ĐÁP ÁN riêng ở cuối đề (như đề đã gửi)</option><option value="red">Chữ bôi đỏ trên đáp án đúng (chỉ file Word)</option><option value="none">Không có đáp án (Claude tự chọn, phải kiểm tra lại)</option></select>${SM?'<div class="card" style="margin-top:10px">'+esc(SM)+'</div>':""}<div style="margin:10px 0">${AI?'<button class="btn" data-act="scan">Số hóa đề</button>':'<span class="tag w">AI chưa sẵn sàng nên chưa số hóa được</span>'}</div><details class="small"><summary>Định dạng đề mẫu nên theo</summary><pre style="white-space:pre-wrap">Câu 1. If I ___ more time, I would learn another language.\nA. have\nB. had\nC. will have\nD. would have\n\nĐoạn văn: (dùng chung cho nhiều câu, ghi trước nhóm câu)\n\nĐÁP ÁN: 1-B, 2-C, 3-A ...</pre>Có sẵn file Word đề mẫu để soạn theo trong khung chat.</details>`}
+async function aiGen(){if(busy)return;if(!E.lesson.trim())return toast("Hãy nhập nội dung hoặc chủ đề trước.");busy=1;toast("Claude đang soạn câu hỏi...");try{const n=Math.min(20,Math.max(1,+E.n||10));const p=`Bạn là giáo viên tiếng Anh THPT Việt Nam. ${E.mode=="lesson"?"Dựa trên nội dung bài học sau:\n"+E.lesson:"Về chủ đề/ngữ pháp: "+E.lesson}\n\nHãy soạn ${n} câu trắc nghiệm tiếng Anh mức ${E.lv}, mỗi câu 4 đáp án, chỉ có MỘT đáp án đúng, không mơ hồ. Chỉ trả về JSON thuần (không giải thích, không markdown) theo dạng:\n[{"q":"câu hỏi","o":["A","B","C","D"],"a":0}]\ntrong đó "a" là chỉ số (0-3) của đáp án đúng.`;const r=await AI(p,{modelTier:"default",cache:false});impText(r.text)}catch(x){toast(x&&x.code=="not_granted"?"Bạn chưa cho phép trang gọi Claude.":x&&x.code=="rate_limited"?"Đang quá giới hạn, hãy thử lại sau ít phút.":"Không tạo được câu hỏi, hãy thử lại.")}busy=0}
+function sim(a){a=a||S.a.filter(a=>cls(a.cid)&&cls(a.cid).st.some(n=>!a.subs.some(s=>s.name==n)))[0];if(!a)return toast("Cần có lớp có học sinh, một bài đã giao và còn học sinh chưa nộp.");
+ const left=cls(a.cid).st.filter(n=>!a.subs.some(s=>s.name==n));if(!left.length)return toast("Cả lớp đã có bài nộp.");
+ const name=left[Math.floor(Math.random()*left.length)],sc=Math.round(Math.random()*100)/10;a.subs.push({name,sc,at:Date.now(),sim:1,seen:0});save();toast(`${name} vừa nộp bài (giả lập): ${sc}/10`);render()}
+document.addEventListener("click",e=>{
+ const g=e.target.closest("[data-go]");if(g)return go(g.dataset.go);
+ const b=e.target.closest("[data-act]");if(!b||b.type=="checkbox")return;const D=b.dataset,A=D.act;
+ if(A=="menu"){if(innerWidth>850)document.body.classList.toggle("collapsed");else document.body.classList.toggle("open");return}
+ if(A=="theme"){S.th=document.documentElement.dataset.theme=="dark"?"light":"dark";save();return render()}
+ if(A=="copen"){CD=D.id;CT="st";CDX="";CDRM=-1;return go("cdet")}
+ if(A=="ctab"){CT=D.t;return render()}
+ if(A=="cax"){CDX=CDX==D.id?"":D.id;return render()}
+ if(A=="cAssign"){const c=cls(CD);if(!c)return;if(AS.sel&&AS.s){AS.s.cid=c.id;AS.pre="";toast("Đã chọn lớp "+c.n+" trong cài đặt bài thi.")}else{AS.pre=c.id;toast("Chọn một đề để giao cho lớp "+c.n+".")}return go("assign")}
+ if(A=="cAddS"){const c=cls(CD),n=val("cd_n").trim().replace(/\s+/g," ");if(!c)return;if(!n)return toast("Hãy nhập họ tên học sinh.");if(c.st.some(x=>nn(x)==nn(n)))return toast("Học sinh này đã có trong lớp.");c.st.push(n);c.info=c.info||{};c.info[n]={};save();toast("Đã thêm "+n+".");return render()}
+ if(A=="cRm"){CDRM=+D.i;return render()}
+ if(A=="cRm0"){CDRM=-1;return render()}
+ if(A=="cRm2"){const c=cls(CD);if(!c)return;const n=c.st[+D.i];c.st.splice(+D.i,1);if(c.info)delete c.info[n];CDRM=-1;save();toast("Đã xóa "+n+" khỏi lớp (bài đã nộp vẫn được giữ).");return render()}
+ if(A=="xGrades")return exportGrades(D.id);
+ if(A=="dxl"){const e=D.id=="__new"?{title:(W.title||"").trim()||"De thi",qs:(W.exam||{}).qs||[]}:ex(D.id);if(!e||!e.qs.length)return toast("Không tìm thấy đề.");return exportDocx(e,D.a=="1")}
+ if(A=="wzGo")return wRun();
+ if(A=="wzCancel"){W.cancel=1;return toast("Đang hủy sau bước hiện tại…")}
+ if(A=="wzNew"){W.ph="form";W.cache=null;W.exam=null;W.err="";return render()}
+ if(A=="wzSave"){if(!W.exam)return;if(W.saved&&ex(W.saved))return go("bank");const t=(W.title||"").trim()||"Đề tạo bằng AI";const id=uid();S.e.push({id,title:t,qs:W.exam.qs,src:"ai",g:W.grade,ty:{thpt:"thpt",ktdk:"ktdk",kttx:"kttx"}[W.fmt]||exGuess({title:t,qs:W.exam.qs}).ty,un:W.fmt=="mat"?(W.mx.scope||""):wUnit(),ts:Date.now()});W.saved=id;save();toast("Đã lưu vào kho đề.");return go("bank")}
+ if(A=="wzTry"){if(!W.exam)return;TKP={qs:W.exam.qs,t:(W.title||"").trim()||"Đề tạo bằng AI",back:"create"};return go("takeStart")}
+ if(A=="mxAdd"){W.mx.rows.push({ty:"",k:"vg",tl:0,topic:"",lvl:"",spec:"",n:1,w:""});return render()}
+ if(A=="mxDel"){W.mx.rows.splice(+D.i,1);return render()}
+ if(A=="mxTpl")return mxTemplate();
+ if(A=="mxRead")return mxRead();
+ if(A=="wzReset"){if(W.cfg)W.cfg[W.fmt]=null;W.gr=[];W.gfree="";return render()}
+ if(A=="wzEdit"){if(!W.exam)return;E.title=(W.title||"").trim();E.qs=W.exam.qs.map(q=>({...q}));E.src="ai";E.mode="manual";return go("create")}
+ if(A=="spGo")return spGo();
+ if(A=="spRec"){if(SP.want){spRecStop();render()}else spRecStart();return}
+ if(A=="spHear"){spSay(SP.qs[SP.i].q);return}
+ if(A=="spTts"){SP.tts=SP.tts?0:1;if(!SP.tts)try{speechSynthesis.cancel()}catch(x){}return render()}
+ if(A=="spNow"){SP.prep=0;SP.qt0=Date.now();spSay("Please start speaking now.");return render()}
+ if(A=="spNext")return spNext(false);
+ if(A=="spSkip")return spNext(true);
+ if(A=="spQuit"||A=="spNew"){spLeave();SP.ph="setup";return render()}
+ if(A=="spEval")return spEval();
+ if(A=="spAgain")return spStart(SP.cfg);
+ if(A=="spView"){const r=(S.sp||[]).find(x=>x.id==D.id);if(!r)return;SP.cfg=r.cfg;SP.ans=r.ans;SP.fb=r.fb;SP.id=r.id;SP.err="";SP.ph="done";return render()}
+ if(A=="spDel"){S.sp=(S.sp||[]).filter(x=>x.id!=D.id);save();return render()}
+ if(A=="spDl"){if(!DL)return toast("Chưa có quyền tải file.");DL.save({filename:"bao-cao-luyen-noi.txt",data:spReport()}).catch(()=>{});return}
+ if(A=="me"){ACC=true;AUE="";AUOK="";return render()}
+ if(A=="acx"){if(e.target.closest('[data-act="acin"]')&&D.act!="acx")return;ACC=false;AUE="";AUOK="";return render()}
+ if(A=="acin")return
+ if(A=="aum"){AUM=D.m;AUE="";AUOK="";AUDEL=0;return render()}
+ if(A=="auGo")return doAuth(D.m);
+ if(A=="pwGo")return changePw();
+ if(A=="logout"){ACC=false;return logout()}
+ if(A=="auDel1"){e.preventDefault();AUDEL=1;return render()}
+ if(A=="auDel0"){AUDEL=0;return render()}
+ if(A=="auDel2"){const k=val("au_id")?normId(val("au_id")):null;if(!k){AUDEL=0;AUE="Nhập số điện thoại/Gmail của tài khoản cần xóa vào ô phía trên rồi bấm lại.";return render()}const u=AUTH.u.find(x=>x.v==k.v);AUDEL=0;if(!u){AUE="Không có tài khoản này.";return render()}try{localStorage.removeItem(u.k)}catch(x){}AUTH.u=AUTH.u.filter(x=>x!==u);saveAuth();AUM="up";AUE="";AUOK="Đã xóa tài khoản và dữ liệu. Bạn có thể đăng ký lại.";return render()}
+ if(A=="bell"){const u=unseen().length;toast(u?`Bạn có ${u} bài nộp mới.`:"Chưa có thông báo mới.");return}
+ if(A=="tab"){tab=+D.i;return render()}
+ if(A=="sim")return sim();
+ if(A=="simA")return sim(S.a.find(a=>a.id==D.id));
+ if(A=="seen"){subs().forEach(s=>s.seen=1);S.a.forEach(a=>a.subs.forEach(s=>s.seen=1));save();return render()}
+ if(A=="cfToggle"){CF.open=!CF.open;return render()}
+ if(A=="cfmode"){CF.mode=D.m;return render()}
+ if(A=="dlTpl")return dlTemplate();
+ if(A=="readCls")return readClassFile();
+ if(A=="saveCls")return saveClass();
+ if(A=="cfshow"){CX=CX==D.id?null:D.id;return render()}
+ if(A=="delClass"){S.c=S.c.filter(c=>c.id!=D.id);S.a=S.a.filter(a=>a.cid!=D.id);save();return render()}
+ if(A=="mode"){E.mode=D.m;PR="";return render()}
+ if(A=="mkPrompt"){if(!E.lesson.trim())return toast("Hãy nhập nội dung hoặc chủ đề trước.");PR=(()=>{const m=E.mode;return `Bạn là giáo viên tiếng Anh THPT Việt Nam. ${m=="lesson"?"Dựa trên nội dung bài học sau:\n"+E.lesson:"Về chủ đề/ngữ pháp: "+E.lesson}\n\nHãy soạn ${E.n} câu trắc nghiệm tiếng Anh mức ${E.lv}, mỗi câu có 4 đáp án, chỉ có MỘT đáp án đúng, không mơ hồ. Chỉ trả về JSON thuần (không giải thích, không markdown) theo dạng:\n[{"q":"câu hỏi","o":["A","B","C","D"],"a":0}]\ntrong đó "a" là chỉ số (0-3) của đáp án đúng.`})();return render()}
+ if(A=="copy"||A=="copyCsv"){const t=$(A=="copy"?"pr":"cv");t.select();try{navigator.clipboard.writeText(t.value).then(()=>toast("Đã sao chép."),()=>toast("Hãy nhấn Ctrl+C để sao chép phần đã chọn."))}catch(x){toast("Hãy nhấn Ctrl+C để sao chép phần đã chọn.")}return}
+ if(A=="asel"){AS.sel=D.id;AS.s=defSet(ex(D.id));if(AS.pre){AS.s.cid=AS.pre;AS.pre=""}return render()}
+ if(A=="mkAsg")return createAssign();
+ if(A=="aopen"){AD=D.id;return go("asgd")}
+ if(A=="asgback")return go("assign");
+ if(A=="expA")return exportAssign();
+ if(A=="impC")return importCodes();
+ if(A=="genEx"){const a=S.a.find(x=>x.id==AD);return a&&genExplain(a.eid)}
+ if(A=="aiFb")return aiFeedback();
+ if(A=="subOpen"){SD={aid:AD,i:+D.i};return go("subd")}
+ if(A=="subBack")return go("asgd");
+ if(A=="subQ"){const a=S.a.find(x=>x.id==SD.aid),e=ex(a.eid),s=a.subs[SD.i];VW={qs:e.qs,t:(a.title||e.title)+" · "+s.name,i:0,ans:true,rev:s.ans,back:"subd"};if(D.i!=null)VW.i=Math.max(0,blocks(e.qs).findIndex(b=>b.items.some(x=>x.n-1==+D.i)));return go("viewer")}
+ if(A=="rq"){const a=S.a.find(x=>x.id==AD),e=ex(a.eid);VW={qs:e.qs,t:a.title||e.title,i:Math.max(0,blocks(e.qs).findIndex(b=>b.items.some(x=>x.n-1==+D.i))),ans:true,back:"asgd"};return go("viewer")}
+ if(A=="subDel"){const a=S.a.find(x=>x.id==SD.aid);if(a){a.subs.splice(SD.i,1);save()}return go("asgd")}
+ if(A=="cpGd"||A=="cpFb"){const t=$(A=="cpGd"?"gd":"fbt");t.select();try{navigator.clipboard.writeText(t.value).then(()=>toast("Đã sao chép."),()=>toast("Hãy nhấn Ctrl+C để sao chép phần đã chọn."))}catch(x){toast("Hãy nhấn Ctrl+C để sao chép phần đã chọn.")}return}
+ if(A=="topen"){const e=ex(D.id);TKP={qs:e.qs,t:e.title,back:"bank"};return go("takeStart")}
+ if(A=="topenA"){const a=S.a.find(x=>x.id==D.id),e=a&&ex(a.eid);if(!e)return toast("Đề của bài này đã bị xóa.");const left=((cls(a.cid)||{}).st||[]).filter(n=>!a.subs.some(s=>s.name==n));if(!left.length)return toast("Cả lớp đã nộp bài hoặc lớp chưa có học sinh.");TKP={qs:e.qs,t:e.title,aid:a.id,left,back:"assign"};return go("takeStart")}
+ if(A=="tback")return go(TKP.back||"bank");
+ if(A=="tstart"){const name=val("tst");if(TKP.aid&&!name)return toast("Hãy chọn học sinh làm bài.");return startTake(TKP,Math.max(1,+val("tmin")||TKP.def),name)}
+ if(A=="tpick"){const n=+D.n,o=+D.o;TK.ans[n]=TK.ans[n]===o?null:o;TK.cf=0;document.querySelectorAll('[data-act="tpick"][data-n="'+n+'"]').forEach(x=>x.setAttribute("aria-pressed",String(+x.dataset.o===TK.ans[n])));const c=$("pc"+n);if(c)c.classList.toggle("on",TK.ans[n]!=null);return}
+ if(A=="tjump"){TK.i=blocks(TK.qs).findIndex(b=>b.items.some(x=>x.n-1==+D.n));return render()}
+ if(A=="tgo"){TK.i+=+D.d;return render()}
+ if(A=="tsubmit")return xm("submit");
+ if(A=="tsubmit2"){closeXm();return submitTake()}
+ if(A=="tquit")return xm("quit");
+ if(A=="tstay")return closeXm();
+ if(A=="tflag"){const k=+D.n;TK.fl[k]=TK.fl[k]?0:1;document.querySelectorAll('[data-act="tflag"][data-n="'+k+'"]').forEach(x=>{x.setAttribute("aria-pressed",String(!!TK.fl[k]));x.textContent=TK.fl[k]?"⚑ Đã gắn cờ":"⚐ Gắn cờ xem lại"});const c=$("pc"+k);if(c)c.classList.toggle("fl",!!TK.fl[k]);return}
+ if(A=="thptExam"){const e=D.id=="__new"?{title:W.title||"Đề vừa tạo",qs:W.exam&&W.exam.qs||[]}:ex(D.id);if(!e||!e.qs.length)return toast("Không tìm thấy đề.");TKP={qs:e.qs,t:e.title,back:"thpt",min:e.qs.length==40?50:0};return go("takeStart")}
+ if(A=="tex"){const wrong=TK.qs.map((q,i)=>i).filter(i=>TK.ans[i]!==TK.qs[i].a);return genExplain({qs:TK.qs},wrong)}
+ if(A=="tquit2"||A=="tclose"){closeXm();clearInterval(TI);const b=TK.back;TK=null;return go(b||"bank")}
+ if(A=="treview"){VW={qs:TK.qs,t:TK.t,i:0,ans:true,rev:TK.ans,back:"tresult"};if(D.n!=null)VW.i=Math.max(0,blocks(TK.qs).findIndex(b=>b.items.some(x=>x.n-1==+D.n)));return go("viewer")}
+ if(A=="explain")return explain(+D.i);
+ if(A=="vopen"){const e=ex(D.id);VW={qs:e.qs,t:e.title,i:0,ans:true,back:"bank"};return go("viewer")}
+ if(A=="vprev"){VW={qs:E.qs,t:E.title||"Đề đang soạn",i:0,ans:true,back:"create"};return go("viewer")}
+ if(A=="vgo"){VW.i+=+D.d;return render()}
+ if(A=="vclose")return go(VW&&VW.back||"bank");
+ if(A=="aiGen")return aiGen();
+ if(A=="scan")return scanFile3();
+ if(A=="imp"){try{let j=JSON.parse(val("js").replace(/```json|```/g,"").trim());if(!Array.isArray(j)||!j.length)throw 0;j.forEach(q=>{if(typeof q.q!="string"||!Array.isArray(q.o)||q.o.length!=4||!Number.isInteger(q.a)||q.a<0||q.a>3)throw 0;q.o=q.o.map(String)});E.qs=E.qs.concat(j.map(q=>({q:q.q,o:q.o,a:q.a})));E.src="ai";toast(`Đã nhập ${j.length} câu. Hãy đọc lại trước khi giao.`);render()}catch(x){toast("JSON chưa đúng định dạng. Kiểm tra lại: cần danh sách câu có q, o (4 đáp án) và a (0-3).")}return}
+ if(A=="addQ"){const q=val("qq").trim(),o=[0,1,2,3].map(i=>val("o"+i).trim());if(!q||o.some(x=>!x))return toast("Hãy nhập đủ câu hỏi và 4 đáp án.");E.qs.push({q,o,a:+val("ca")});return render()}
+ if(A=="rmQ"){E.qs.splice(+D.i,1);return render()}
+ if(A=="saveE"){if(!E.title.trim())return toast("Hãy đặt tên đề.");S.e.push({id:uid(),title:E.title.trim(),qs:E.qs,src:E.src,ts:Date.now()});E={...E,title:"",qs:[],src:"teacher",lesson:""};PR="";save();toast("Đã lưu vào kho đề.");return go("bank")}
+ if(A=="bkOpen"){const e=ex(D.id);if(!e)return;const m=exMeta(e);BK.det=D.id;BK.dt={title:e.title,g:m.g,ty:m.ty,un:m.un};BK.menu=null;BK.del=null;render();return scrollTo(0,0)}
+ if(A=="bkBack"){BK.det=null;BK.dt=null;BK.del=null;return render()}
+ if(A=="bkF"){BK[D.k]=D.v;return render()}
+ if(A=="bkClear"){BK.q="";BK.g="";BK.ty="";BK.src="";return render()}
+ if(A=="bkMenu"){BK.menu=BK.menu==D.id?null:D.id;BK.del=null;return render()}
+ if(A=="bkAsg"){const e=ex(D.id);if(!e)return;AS.sel=e.id;AS.s=defSet(e);return go("assign")}
+ if(A=="bkDel"){if(BK.del==D.id){S.e=S.e.filter(x=>x.id!=D.id);S.a=S.a.filter(a=>a.eid!=D.id);BK.del=null;BK.menu=null;BK.det=null;BK.dt=null;save();toast("Đã xóa đề.");return render()}BK.del=D.id;return render()}
+ if(A=="bkSave"){const e=ex(BK.det),d=BK.dt;if(!e||!d)return;const t=String(d.title||"").trim();if(!t)return toast("Tên đề không được để trống.");e.title=t;e.g=String(d.g||"");e.ty=d.ty||"khac";e.un=String(d.un||"").trim();save();toast("Đã lưu thay đổi.");return render()}
+ if(A=="view"){E.open=E.open==D.id?null:D.id;return render()}
+ if(A=="delE"){S.e=S.e.filter(x=>x.id!=D.id);S.a=S.a.filter(a=>a.eid!=D.id);save();return render()}
+ if(A=="addA"){S.a.push({id:uid(),eid:val("ae"),cid:val("ac"),due:val("ad"),subs:[]});save();toast("Đã giao bài.");return render()}
+ if(A=="delA"){S.a=S.a.filter(a=>a.id!=D.id);save();return render()}
+ if(A=="thptGo"){E.title=D.t;E.mode="manual";return go("create")}
+ if(A=="addT"){const x=val("tk").trim();if(!x)return toast("Hãy nhập nội dung nhiệm vụ.");S.t.push({id:uid(),x,due:val("td"),done:0});save();return render()}
+ if(A=="delT"){S.t=S.t.filter(t=>t.id!=D.id);save();return render()}
+});
+document.addEventListener("keydown",e=>{if(e.key=="Escape")closeXm();if(e.key=="Enter"&&!ME&&e.target.tagName=="INPUT")doAuth(AUM)});
+document.addEventListener("change",e=>{if(e.target.id=="vsel"){VW.i=+e.target.value;return render()}if(e.target.id=="vans"){VW.ans=e.target.checked;return render()}if(e.target.dataset.act=="chk"){const t=S.t.find(t=>t.id==e.target.dataset.id);t.done=e.target.checked?1:0;save();render()}});
+document.addEventListener("input",e=>{{const t=e.target,d=t.dataset;if(d.bkd){if(BK.dt)BK.dt[d.bkd]=t.value}else if(d.bk){BK[d.bk]=d.bk=="grp"?t.checked:t.value;const L=$("bklist");if(L)L.innerHTML=bkList()}else if(d.mxr){const r=W.mx.rows[+d.i];if(r){const f=d.mxr;if(f=="n")r.n=Math.max(0,Math.min(60,parseInt(t.value)||0));else if(f=="tl")r.tl=t.checked?1:0;else if(f=="k")r.k=t.value||null;else r[f]=t.value;r.w=mxW(r);if(f=="k"||f=="tl")render();else{const s=$("mxs_"+d.i);if(s)s.textContent=mxSt(r);const z=$("wz_tot");if(z)z.innerHTML=mxTotH()}}}else if(d.mx){W.mx[d.mx]=d.mx=="min"?(parseInt(t.value)||0):d.mx=="tl"?t.checked:t.value;if(d.mx=="tl")render()}else if(d.wm!=null){const r=cfgOf(W.fmt)[+d.wm];r.n=Math.max(0,Math.min(99,parseInt(t.value)||0));const el=$("wz_tot");if(el)el.innerHTML=totH(wF())}else if(d.won!=null){const r=cfgOf(W.fmt)[+d.won];r.on=t.checked;if(r.on&&!r.n)r.n=DEFC[W.fmt][r.k]||2;render()}else if(d.wg!=null){const i=W.gr.indexOf(d.wg);if(t.checked&&i<0)W.gr.push(d.wg);if(!t.checked&&i>=0)W.gr.splice(i,1)}}if(e.target.id=="sp_ans")SP.cur=e.target.value;const wv=e.target.dataset.w;if(wv){W[wv]=e.target.value;if(e.target.tagName=="SELECT"){if(wv=="grade"){W.unit="1";if(+W.grade<10&&W.fmt=="thpt")W.fmt="ktdk"}render()}}const cf=e.target.dataset.cf;if(cf)CF[cf]=e.target.value;const as=e.target.dataset.as;if(as&&AS.s){AS.s[as]=e.target.value;if(e.target.tagName=="SELECT"&&as=="show")render()}const m=e.target.dataset.m;if(m&&m in E)E[m]=e.target.value});
+try{window.claude&&claude.use("sample").then(s=>{if(s){AI=s;render()}});claude.use("downloads").then(d=>{if(d){DL=d;render()}})}catch(x){}
+render();
+</script>
+</body>
+</html>
