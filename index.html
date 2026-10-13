@@ -102,12 +102,12 @@ window.BLINGO_STANDALONE=true;
 /* Lớp tương thích: app gọi claude.use("downloads") và claude.use("sample"). Ngoài môi trường Claude: tải file bằng trình duyệt; AI qua máy chủ riêng hoặc khóa Gemini của từng giáo viên. */
 (function(){if(window.claude)return;var C=window.BLINGO_CONFIG||{};
 function key(){try{return localStorage.getItem("blingo_ai_key")||""}catch(e){return ""}}
-function bad(st){if(st===429)throw{code:"rate_limited"};if(st===400||st===401||st===403)throw{code:"not_granted"};throw{code:"error"}}
+async function bad(r){var st=r.status,d="";try{d=(await r.text()).slice(0,200).replace(/\s+/g," ")}catch(e){}if(st===429)throw{code:"rate_limited",status:st,detail:d};if(st===400||st===401||st===403)throw{code:"not_granted",status:st,detail:d};throw{code:"error",status:st,detail:d}}
 async function viaEndpoint(prompt){var r;try{r=await fetch(C.aiEndpoint,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt:prompt})})}catch(e){throw{code:"network"}}
- if(!r.ok)bad(r.status);var j=await r.json();return{text:String(j.text||""),truncated:!!j.truncated}}
+ if(!r.ok)await bad(r);var j=await r.json();return{text:String(j.text||""),truncated:!!j.truncated}}
 async function viaGemini(prompt){var k=key();if(!k)throw{code:"not_granted"};var r;
  try{r=await fetch("https://generativelanguage.googleapis.com/v1beta/models/"+(C.model||"gemini-flash-latest")+":generateContent",{method:"POST",headers:{"Content-Type":"application/json","x-goog-api-key":k},body:JSON.stringify({contents:[{role:"user",parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:24000,temperature:0.7}})})}catch(e){throw{code:"network"}}
- if(!r.ok)bad(r.status);var j=await r.json(),c=j.candidates&&j.candidates[0];if(!c||!c.content)throw{code:"error"};
+ if(!r.ok)await bad(r);var j=await r.json(),c=j.candidates&&j.candidates[0];if(!c||!c.content)throw{code:"error",detail:"Gemini không trả nội dung"+(c&&c.finishReason?" ("+c.finishReason+")":"")};
  return{text:(c.content.parts||[]).map(function(p){return p.text||""}).join(""),truncated:c.finishReason==="MAX_TOKENS"}}
 window.claude={use:async function(n){
  if(n==="downloads")return{save:async function(o){var d=o.data,b=new Blob([typeof d==="string"?d:(d instanceof Uint8Array?d:new Uint8Array(d))],{type:o.type||"application/octet-stream"});var a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=o.filename||"file";document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},1500)}};
@@ -381,6 +381,7 @@ const PARTN={"1":"Part 1 – Hỏi đáp quen thuộc","2":"Part 2 – Nói dài
 const mmss=s=>Math.floor(s/60)+":"+String(Math.floor(s%60)).padStart(2,"0");
 const wc=t=>(String(t||"").match(/[A-Za-z0-9'’-]+/g)||[]).length;
 const pj=t=>{const a=t.indexOf("{"),b=t.lastIndexOf("}");if(a<0||b<a)throw 0;return JSON.parse(t.slice(a,b+1))};
+const aiWhy=x=>{if(!x||typeof x!="object")return"";const m={long:"câu trả lời bị cắt do quá dài",bad:"nội dung trả về không đúng định dạng",network:"không kết nối được tới máy chủ AI (mạng hoặc bị chặn)",error:"máy chủ AI báo lỗi"}[x.code]||x.code||"";return " [Chi tiết: "+m+(x.status?", mã "+x.status:"")+(x.detail?" – "+String(x.detail).slice(0,160):"")+"]"};
 const SA=()=>!!window.BLINGO_STANDALONE;
 const AIOFF=()=>SA()?"Chưa kết nối AI. Bấm tên tài khoản ở góc trên → dán khóa Gemini miễn phí.":"Chưa kết nối được AI. Hãy cho phép trang gọi Claude khi được hỏi.";
 const aiOffH=()=>`<div class="aerr">${esc(AIOFF())}${SA()?' <button class="btn s" data-act="me">Kết nối AI</button>':""}</div>`;
@@ -555,10 +556,10 @@ const wSig=()=>[W.grade,W.book,wUnit(),W.fmt,JSON.stringify([W.cfg&&W.cfg[W.fmt]
 function wPlan(f){const T=[],M=f.mods.map(m=>{const o={...m,tx:[]};if(m.k=="cloze")o.tx.push(T.push({kind:m.t,topic:m.topic})-1);if(m.k=="read")m.ns.forEach(()=>o.tx.push(T.push({kind:"passage",topic:m.topic})-1));if(m.k=="ins")o.tx.push(T.push({kind:"ins",topic:m.topic})-1);return o});return{T,M}}
 const wCtx=()=>`Sách giáo khoa: ${BOOKS[W.book]} tiếng Anh lớp ${W.grade}. Nội dung: ${wUnit()}. Đối tượng: học sinh ${+W.grade<10?"THCS":"THPT"} Việt Nam, mức độ phù hợp lớp ${W.grade} (CEFR ${{6:"A1",7:"A1–A2",8:"A2",9:"A2",10:"A2–B1",11:"B1"}[W.grade]||"B1–B2"}). Bám chủ đề và từ vựng của unit nhưng viết nội dung ORIGINAL, không chép nguyên văn sách.${+W.grade<10?" Dùng câu ngắn, từ vựng đơn giản, phù hợp lứa tuổi 11–15.":""}`;
 async function wCall(p,check){
- let last;for(let k=0;k<2;k++){
+ let last,lt="";for(let k=0;k<2;k++){
   if(W.cancel)throw{code:"cancel"};
-  try{const r=await AI(p+(k?"\n\n(Lần trước kết quả chưa hợp lệ. Hãy làm đúng định dạng JSON yêu cầu, ngắn gọn.)":""),{modelTier:"default",cache:false});if(r.truncated)throw{code:"long"};const j=pj(r.text);const v=check(j);if(!v)throw{code:"bad"};return v}
-  catch(x){last=x;if(x&&(x.code=="not_granted"||x.code=="rate_limited"||x.code=="cancel"))throw x}
+  try{const r=await AI(p+(k?"\n\n(Lần trước kết quả chưa hợp lệ. Hãy làm đúng định dạng JSON yêu cầu, ngắn gọn.)":""),{modelTier:"default",cache:false});lt=r.text||"";if(r.truncated)throw{code:"long"};const j=pj(r.text);const v=check(j);if(!v)throw{code:"bad"};return v}
+  catch(x){last=(x&&typeof x=="object")?x:{code:"bad"};if(!last.detail&&lt&&!last.status)last.detail=lt.slice(0,140).replace(/\s+/g," ");if(x&&(x.code=="not_granted"||x.code=="rate_limited"||x.code=="cancel"))throw x}
  }throw last||{code:"bad"}
 }
 const okOpts=(o,a)=>Array.isArray(o)&&o.length==4&&Number.isInteger(a)&&a>=0&&a<=3&&new Set(o.map(x=>String(x).trim().toLowerCase())).size==4&&o.every(x=>String(x).trim());
@@ -643,7 +644,7 @@ Chỉ trả về JSON: {"texts":[{"id":"t0","title":"...","text":"..."}]}`,j=>{c
   W.step=2;W.sub="AI tự giải lại độc lập từng câu";wr();
   W.audit=await wAudit(qs);
   W.exam={qs};W.rng=rng;W.title=f.mx?`${f.name} – Lớp ${W.grade}`:`${f.name.replace(/ \(.*\)$/,"")} – ${BOOKS[W.book]} ${W.grade} – ${wUnit()}`;W.ph="prev";W.step=3;
- }catch(x){W.ph="form";W.err=x&&x.code=="cancel"?"Đã hủy tạo đề.":(x&&(x.code=="not_granted"||x.code=="rate_limited")?aiErr(x):"AI trả kết quả chưa hợp lệ sau 2 lần thử.")+" Phần đã tạo xong được giữ lại – bấm lại để tạo tiếp."}
+ }catch(x){W.ph="form";W.err=x&&x.code=="cancel"?"Đã hủy tạo đề.":(x&&(x.code=="not_granted"||x.code=="rate_limited")?aiErr(x):"AI trả kết quả chưa hợp lệ sau 2 lần thử."+aiWhy(x))+" Phần đã tạo xong được giữ lại – bấm lại để tạo tiếp."}
  wr()
 }
 function wizTop(){return `<h1>Tạo đề</h1><div class="card" style="padding:12px">${ctabs(E.mode)}</div>`}
