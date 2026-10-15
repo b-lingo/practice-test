@@ -7,18 +7,18 @@ B-Lingo là nền tảng quản trị và trợ lý giảng dạy tiếng Anh th
 ### 1. Endpoint AI Server: `POST /api/ai`
 - **Xác thực bảo mật**: Kiểm tra Firebase ID Token trong header `Authorization: Bearer <token>`. Từ chối người dùng chưa đăng nhập (HTTP 401/403).
 - **Giới hạn tần suất (Rate Limiting)**: Tối đa **30 yêu cầu / phút** và **800 yêu cầu / ngày** cho mỗi tài khoản giáo viên. Khi vượt giới hạn trả HTTP 429.
-- **Không để lộ khóa**: Toàn bộ yêu cầu AI được xử lý trên máy chủ. Khóa `GEMINI_API_KEY` nằm hoàn toàn ở môi trường server, không bao giờ gửi xuống client.
-- **Mô hình**: Đọc từ biến `GEMINI_MODEL` (mặc định `gemini-flash-latest`, có thể cấu hình `gemini-3.1-pro-preview`). `maxOutputTokens: 24000`, `temperature: 0.7`.
+- **Không để lộ khóa**: Toàn bộ yêu cầu AI được xử lý trên máy chủ. Khóa `BLINGO_GEMINI_KEY` nằm hoàn toàn ở môi trường server, không bao giờ gửi xuống client.
+- **Mô hình**: Đọc từ biến `GEMINI_MODEL` (mặc định `gemini-3.8-flash`). `maxOutputTokens: 24000`, `temperature: 0.7`.
 - **Định dạng phản hồi**: `{ "text": "...", "truncated": true/false }`.
 
 ### 2. Thiết lập biến môi trường (Environment Variables)
 Tạo file `.env` tại thư mục gốc của dự án (tham khảo file `.env.example`):
 ```env
 # Khóa API Gemini lấy từ https://aistudio.google.com
-GEMINI_API_KEY=your_gemini_api_key_here
+BLINGO_GEMINI_KEY=your_gemini_api_key_here
 
-# Mô hình AI tùy chọn (mặc định gemini-flash-latest)
-GEMINI_MODEL=gemini-flash-latest
+# Mô hình AI tùy chọn (mặc định gemini-3.8-flash)
+GEMINI_MODEL=gemini-3.8-flash
 
 # Cổng máy chủ (mặc định 3000)
 PORT=3000

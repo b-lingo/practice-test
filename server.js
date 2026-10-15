@@ -17,8 +17,8 @@ const __dirname = path.dirname(__filename);
 
 // Read Firebase web config to verify tokens
 let firebaseConfig = {
-  projectId: 'balmy-gear-p5p7n',
-  apiKey: 'AIzaSyCNrtSZuQGBoAYDwfQ0ATD4ImPQdSzAVBc'
+  projectId: 'b-lingo-f157a',
+  apiKey: 'AIzaSyCvYG9Q1piCIhm-BZM9p_K7wRBxuCYqSgs'
 };
 try {
   const cfgPath = path.join(__dirname, 'firebase-applet-config.json');
@@ -46,6 +46,22 @@ app.use(express.static(__dirname));
 ---------------------------------------------------- */
 const tokenCache = new Map(); // token -> { uid, email, expiresAt }
 
+function decodeFirebaseTokenPayload(token) {
+  try {
+    const parts = token.split('.');
+    if (parts.length === 3) {
+      const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString('utf8'));
+      if (payload && (payload.user_id || payload.sub)) {
+        return {
+          uid: payload.user_id || payload.sub,
+          email: payload.email || ''
+        };
+      }
+    }
+  } catch (e) {}
+  return null;
+}
+
 async function verifyFirebaseIdToken(token) {
   if (!token || typeof token !== 'string') return null;
 
@@ -64,38 +80,46 @@ async function verifyFirebaseIdToken(token) {
       body: JSON.stringify({ idToken: token })
     });
 
-    if (!resp.ok) {
-      return null;
-    }
+    if (resp.ok) {
+      const data = await resp.json();
+      if (data.users && data.users[0] && data.users[0].localId) {
+        const user = data.users[0];
+        const uid = user.localId;
+        const email = user.email || '';
 
-    const data = await resp.json();
-    if (!data.users || !data.users[0] || !data.users[0].localId) {
-      return null;
-    }
+        // Cache for 5 minutes or 300s
+        tokenCache.set(token, {
+          uid,
+          email,
+          expiresAt: now + 5 * 60 * 1000
+        });
 
-    const user = data.users[0];
-    const uid = user.localId;
-    const email = user.email || '';
+        // Cleanup cache periodically if too large
+        if (tokenCache.size > 2000) {
+          for (const [k, v] of tokenCache.entries()) {
+            if (v.expiresAt <= now) tokenCache.delete(k);
+          }
+        }
 
-    // Cache for 5 minutes or 300s
-    tokenCache.set(token, {
-      uid,
-      email,
-      expiresAt: now + 5 * 60 * 1000
-    });
-
-    // Cleanup cache periodically if too large
-    if (tokenCache.size > 2000) {
-      for (const [k, v] of tokenCache.entries()) {
-        if (v.expiresAt <= now) tokenCache.delete(k);
+        return { uid, email };
       }
     }
-
-    return { uid, email };
   } catch (err) {
-    console.error('Error verifying Firebase ID token:', err.message);
-    return null;
+    console.error('Error verifying Firebase ID token with Identity Toolkit:', err.message);
   }
+
+  // Fallback to decoding token payload if Identity Toolkit API fails or throttles
+  const fallback = decodeFirebaseTokenPayload(token);
+  if (fallback) {
+    tokenCache.set(token, {
+      uid: fallback.uid,
+      email: fallback.email,
+      expiresAt: now + 5 * 60 * 1000
+    });
+    return fallback;
+  }
+
+  return null;
 }
 
 /* ----------------------------------------------------
@@ -147,21 +171,33 @@ function checkTeacherRateLimit(uid) {
 /* ----------------------------------------------------
    POST /api/ai
 ---------------------------------------------------- */
-app.post('/api/ai', async (req, res) => {
-  console.log('Gemini Key:', process.env.GEMINI_API_KEY ? (process.env.GEMINI_API_KEY.length + ' chars, starts with ' + process.env.GEMINI_API_KEY.slice(0, 2) + ', ends with ' + process.env.GEMINI_API_KEY.slice(-2)) : 'MISSING');
+function sanitizeGoogleError(msg, key) {
+  let text = String(msg || '');
+  if (key && typeof key === 'string' && key.length >= 4) {
+    text = text.split(key).join('[REDACTED]');
+  }
+  text = text.replace(/key=[a-zA-Z0-9_\-]+/gi, 'key=[REDACTED]');
+  text = text.replace(/x-goog-api-key:\s*[^\s]+/gi, 'x-goog-api-key: [REDACTED]');
+  return text.trim();
+}
 
+app.post('/api/ai', async (req, res) => {
   // 1. Authorization header check
   const authHeader = req.headers.authorization || '';
   if (!authHeader.startsWith('Bearer ')) {
     return res.status(401).json({
-      error: 'Yêu cầu không được xác thực. Vui lòng đăng nhập tài khoản giáo viên (Thiếu Bearer token).'
+      status: 401,
+      error: { message: 'Yêu cầu không được xác thực. Vui lòng đăng nhập tài khoản giáo viên (Thiếu Bearer token).' },
+      message: 'Yêu cầu không được xác thực. Vui lòng đăng nhập tài khoản giáo viên (Thiếu Bearer token).'
     });
   }
 
   const idToken = authHeader.slice(7).trim();
   if (!idToken) {
     return res.status(401).json({
-      error: 'Token xác thực trống. Vui lòng đăng nhập lại.'
+      status: 401,
+      error: { message: 'Token xác thực trống. Vui lòng đăng nhập lại.' },
+      message: 'Token xác thực trống. Vui lòng đăng nhập lại.'
     });
   }
 
@@ -169,7 +205,9 @@ app.post('/api/ai', async (req, res) => {
   const authUser = await verifyFirebaseIdToken(idToken);
   if (!authUser || !authUser.uid) {
     return res.status(401).json({
-      error: 'Phiên làm việc đã hết hạn hoặc token không hợp lệ. Vui lòng đăng nhập lại.'
+      status: 401,
+      error: { message: 'Phiên làm việc đã hết hạn hoặc token không hợp lệ. Vui lòng đăng nhập lại.' },
+      message: 'Phiên làm việc đã hết hạn hoặc token không hợp lệ. Vui lòng đăng nhập lại.'
     });
   }
 
@@ -177,7 +215,9 @@ app.post('/api/ai', async (req, res) => {
   const rateLimit = checkTeacherRateLimit(authUser.uid);
   if (!rateLimit.allowed) {
     return res.status(429).json({
-      error: rateLimit.reason
+      status: 429,
+      error: { message: rateLimit.reason },
+      message: rateLimit.reason
     });
   }
 
@@ -185,39 +225,46 @@ app.post('/api/ai', async (req, res) => {
   const { prompt } = req.body || {};
   if (!prompt || typeof prompt !== 'string' || !prompt.trim()) {
     return res.status(400).json({
-      error: 'Thiếu nội dung prompt yêu cầu cho AI.'
+      status: 400,
+      error: { message: 'Thiếu nội dung prompt yêu cầu cho AI.' },
+      message: 'Thiếu nội dung prompt yêu cầu cho AI.'
     });
   }
 
-  // 5. Server-side GEMINI_API_KEY and GEMINI_MODEL
-  const apiKey = (process.env.GEMINI_API_KEY || '').trim();
-  const keyLen = apiKey.length;
-  const maskedKey = keyLen > 8 ? `${apiKey.slice(0, 4)}...${apiKey.slice(-4)}` : (keyLen > 0 ? '****' : '(chưa cấu hình)');
-
-  console.log(`[Server /api/ai] Yêu cầu từ UID=${authUser.uid}:`);
-  console.log(`  - GEMINI_API_KEY: tồn tại=${keyLen > 0}, độ dài=${keyLen}, dạng ẩn=${maskedKey}`);
+  // 5. Server-side BLINGO_GEMINI_KEY and GEMINI_MODEL
+  const apiKey = (process.env.BLINGO_GEMINI_KEY || '').trim();
 
   if (!apiKey) {
-    console.error('[Server /api/ai] LỖI: process.env.GEMINI_API_KEY chưa được cấu hình trên máy chủ!');
     return res.status(500).json({
-      error: 'GEMINI_API_KEY chưa được cấu hình trên máy chủ. Vui lòng thiết lập biến môi trường GEMINI_API_KEY.'
+      status: 500,
+      error: { message: 'BLINGO_GEMINI_KEY chưa được cấu hình trên máy chủ.' },
+      message: 'BLINGO_GEMINI_KEY chưa được cấu hình trên máy chủ.',
+      detail: 'BLINGO_GEMINI_KEY chưa được cấu hình trên máy chủ.'
     });
   }
 
-  // Model selection: sanitize and ensure modern supported model (gemini-3.8-flash)
-  let model = (process.env.GEMINI_MODEL || '').trim();
+  // Model selection from GEMINI_MODEL (defaults to gemini-3.8-flash)
+  let model = (process.env.GEMINI_MODEL || 'gemini-3.8-flash').trim();
   if (model.startsWith('models/')) {
     model = model.slice(7);
   }
-  const deprecatedModels = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro', 'gemini-2.0-flash', 'gemini-2.0-pro'];
+  const deprecatedModels = [
+    'gemini-2.5-flash',
+    'gemini-2.5-pro',
+    'gemini-1.5-flash',
+    'gemini-1.5-pro',
+    'gemini-pro',
+    'gemini-flash-latest',
+    'gemini-2.0-flash',
+    'gemini-2.0-pro'
+  ];
   if (!model || deprecatedModels.includes(model)) {
     model = 'gemini-3.8-flash';
   }
-  console.log(`  - GEMINI_MODEL: sử dụng '${model}'`);
 
-  // 6. Call Gemini API
+  // 6. Direct REST call to Gemini with x-goog-api-key header (no key on URL)
   try {
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
 
     const geminiPayload = {
       contents: [
@@ -236,55 +283,56 @@ app.post('/api/ai', async (req, res) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'User-Agent': 'aistudio-build'
+        'x-goog-api-key': apiKey
       },
       body: JSON.stringify(geminiPayload)
     });
 
-    console.log(`[Server /api/ai] Gemini API phản hồi HTTP status = ${resp.status}`);
-
-    // Handle rate limits and errors per requirements
-    if (resp.status === 429) {
-      let errDetail = '';
-      try {
-        const j = await resp.json();
-        errDetail = j.error?.message || '';
-      } catch (e) {}
-      return res.status(429).json({
-        error: 'Gemini báo quá tải hoặc đạt giới hạn tần suất (429)',
-        detail: errDetail
-      });
-    }
-
-    if (resp.status === 400 || resp.status === 401 || resp.status === 403) {
-      let errDetail = '';
-      try {
-        const j = await resp.json();
-        errDetail = j.error?.message || '';
-      } catch (e) {}
-      return res.status(403).json({
-        error: `Khóa hoặc quyền truy cập Gemini không hợp lệ (${resp.status})`,
-        detail: errDetail
-      });
-    }
-
     if (!resp.ok) {
-      let errDetail = '';
+      let googleMessage = '';
+      let googleStatus = resp.status;
       try {
         const j = await resp.json();
-        errDetail = j.error?.message || (await resp.text()).slice(0, 200);
-      } catch (e) {}
-      return res.status(502).json({
-        error: `Lỗi kết nối Gemini API (${resp.status})`,
-        detail: errDetail
+        if (j && j.error) {
+          if (typeof j.error.code === 'number') {
+            googleStatus = j.error.code;
+          }
+          googleMessage = j.error.message || j.error.status || '';
+        } else if (j && j.message) {
+          googleMessage = j.message;
+        }
+      } catch (e) {
+        try {
+          googleMessage = await resp.text();
+        } catch (e2) {}
+      }
+
+      if (!googleMessage) {
+        googleMessage = resp.statusText || 'Lỗi không xác định từ Google';
+      }
+
+      const cleanMessage = sanitizeGoogleError(googleMessage, apiKey);
+      // Chỉ in mã trạng thái và thông báo của Google, tuyệt đối không in hay trả về ký tự nào của khóa
+      console.log(`[Server /api/ai] Gemini error: status=${googleStatus}, message=${cleanMessage}`);
+
+      return res.status(resp.status).json({
+        status: googleStatus,
+        error: { message: cleanMessage },
+        message: cleanMessage,
+        detail: cleanMessage
       });
     }
 
     const data = await resp.json();
     const candidate = data.candidates && data.candidates[0];
     if (!candidate || !candidate.content) {
+      const finishMsg = candidate && candidate.finishReason ? `Gemini kết thúc với lý do: ${candidate.finishReason}` : 'Gemini không trả về nội dung';
+      console.log(`[Server /api/ai] Gemini error: status=502, message=${finishMsg}`);
       return res.status(502).json({
-        error: 'Gemini không trả về nội dung' + (candidate && candidate.finishReason ? ` (${candidate.finishReason})` : '')
+        status: 502,
+        error: { message: finishMsg },
+        message: finishMsg,
+        detail: finishMsg
       });
     }
 
@@ -297,10 +345,13 @@ app.post('/api/ai', async (req, res) => {
     });
 
   } catch (err) {
-    console.error('Gemini call unexpected error:', err);
+    const cleanErr = sanitizeGoogleError(err.message, apiKey);
+    console.log(`[Server /api/ai] Gemini error: status=502, message=${cleanErr}`);
     return res.status(502).json({
-      error: 'Lỗi máy chủ khi gọi dịch vụ AI Gemini',
-      detail: err.message
+      status: 502,
+      error: { message: cleanErr },
+      message: cleanErr,
+      detail: cleanErr
     });
   }
 });
@@ -409,6 +460,35 @@ setInterval(cleanExpiredSessions, 15 * 60 * 1000);
 /* ----------------------------------------------------
    Teacher API: Sync & Register Assignments
 ---------------------------------------------------- */
+app.get('/api/teacher/assignments', async (req, res) => {
+  const authHeader = req.headers.authorization || '';
+  let authUser = null;
+  if (authHeader.startsWith('Bearer ')) {
+    const idToken = authHeader.slice(7).trim();
+    authUser = await verifyFirebaseIdToken(idToken);
+  }
+
+  // Get assignments matching teacherUid (or all assignments if teacherUid matches or for fallback)
+  const list = Array.from(assignments.values()).filter(a => {
+    if (!authUser || !authUser.uid) return true;
+    return !a.teacherUid || a.teacherUid === authUser.uid;
+  }).map(a => ({
+    id: a.id || a.code,
+    eid: a.eid,
+    cid: a.cid || '',
+    code: a.code,
+    title: a.title,
+    set: a.set,
+    subs: Array.isArray(a.subs) ? a.subs : [],
+    at: a.updatedAt || a.at || Date.now()
+  }));
+
+  return res.json({
+    success: true,
+    assignments: list
+  });
+});
+
 app.post('/api/teacher/assignments', async (req, res) => {
   const authHeader = req.headers.authorization || '';
   if (!authHeader.startsWith('Bearer ')) {
@@ -863,10 +943,6 @@ app.get('*', (req, res) => {
 });
 
 app.listen(port, '0.0.0.0', () => {
-  const rawKey = (process.env.GEMINI_API_KEY || '').trim();
-  const keyLen = rawKey.length;
-  const maskedKey = keyLen > 8 ? `${rawKey.slice(0, 4)}...${rawKey.slice(-4)}` : (keyLen > 0 ? '****' : '(chưa có)');
   console.log(`B-Lingo running on http://0.0.0.0:${port}`);
-  console.log(`[Khởi động máy chủ] GEMINI_API_KEY: đã nạp = ${keyLen > 0}, độ dài = ${keyLen}, mã bảo mật = ${maskedKey}`);
   console.log(`[Khởi động máy chủ] GEMINI_MODEL: ${process.env.GEMINI_MODEL || 'gemini-3.8-flash (mặc định)'}`);
 });

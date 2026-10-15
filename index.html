@@ -125,6 +125,10 @@ body.student-mode .wrap { margin: 0 auto !important; }
 .smart-rem.warn{border-left-color:#f59e0b;background:rgba(245,158,11,.03)}
 .smart-rem.info{border-left-color:var(--pri)}
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prop-types/15.8.1/prop-types.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.13.0/Recharts.min.js"></script>
 </head>
 <body class="locked">
 <aside id="side" aria-label="Điều hướng"></aside>
@@ -154,6 +158,7 @@ import {
   getFirestore, 
   doc, 
   getDoc, 
+  getDocFromServer,
   setDoc, 
   deleteDoc,
   collection,
@@ -164,19 +169,42 @@ import {
   onSnapshot 
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
-const firebaseConfig = {
-  projectId: "balmy-gear-p5p7n",
-  appId: "1:482439424653:web:38484b290d2b91105790c4",
-  apiKey: "AIzaSyCNrtSZuQGBoAYDwfQ0ATD4ImPQdSzAVBc",
-  authDomain: "balmy-gear-p5p7n.firebaseapp.com",
+let firebaseConfig = {
+  projectId: "b-lingo-f157a",
+  appId: "1:513964377437:web:d550810247d8a51afd94b4",
+  apiKey: "AIzaSyCvYG9Q1piCIhm-BZM9p_K7wRBxuCYqSgs",
+  authDomain: "b-lingo-f157a.firebaseapp.com",
   firestoreDatabaseId: "ai-studio-practicetest-f72cc6c5-1361-46dd-8796-72ebcf7fca9a",
-  storageBucket: "balmy-gear-p5p7n.firebasestorage.app",
-  messagingSenderId: "482439424653"
+  storageBucket: "b-lingo-f157a.firebasestorage.app",
+  messagingSenderId: "513964377437",
+  measurementId: "",
+  oAuthClientId: "513964377437-8jq5s6ughh4cla7n1h78cihn6i165j1u.apps.googleusercontent.com"
 };
+
+try {
+  const cfgRes = await fetch("/firebase-applet-config.json");
+  if (cfgRes.ok) {
+    const loadedCfg = await cfgRes.json();
+    Object.assign(firebaseConfig, loadedCfg);
+  }
+} catch (e) {
+  console.warn("Could not dynamically load firebase-applet-config.json, using defaults:", e);
+}
 
 const fbApp = initializeApp(firebaseConfig);
 const auth = getAuth(fbApp);
 const db = getFirestore(fbApp, firebaseConfig.firestoreDatabaseId);
+
+async function testConnection() {
+  try {
+    await getDocFromServer(doc(db, "test", "connection"));
+  } catch (error) {
+    if (error instanceof Error && error.message.includes("the client is offline")) {
+      console.error("Please check your Firebase configuration.");
+    }
+  }
+}
+testConnection();
 
 window.BLINGO_CONFIG = { aiEndpoint: "/api/ai" };
 window.BLINGO_STANDALONE = true;
@@ -185,7 +213,17 @@ window.BLINGO_STANDALONE = true;
 function aiKey(){try{return localStorage.getItem("blingo_ai_key")||""}catch(e){return ""}}
 function hasAiAccess(){return !!(window.BLINGO_CONFIG && window.BLINGO_CONFIG.aiEndpoint && auth && auth.currentUser) || !!aiKey();}
 
-async function bad(r){var st=r.status,d="";try{d=(await r.text()).slice(0,200).replace(/\s+/g," ")}catch(e){}if(st===429)throw{code:"rate_limited",status:st,detail:d};if(st===400||st===401||st===403)throw{code:"not_granted",status:st,detail:d};throw{code:"error",status:st,detail:d}}
+async function bad(r){
+  var st=r.status,d="";
+  try{
+    const j=await r.json();
+    d=(j.error && j.error.message) || j.message || j.error || j.detail || "";
+  }catch(e){
+    try{d=(await r.text()).slice(0,300).replace(/\s+/g," ")}catch(e2){}
+  }
+  const fullMsg = d ? `[${st}] ${d}` : `[${st}] Lỗi Gemini API`;
+  throw{code:"error",status:st,message:fullMsg,detail:fullMsg};
+}
 
 async function viaGemini(prompt){
   const cfg = window.BLINGO_CONFIG || {};
@@ -209,15 +247,16 @@ async function viaGemini(prompt){
     }
     if (!r.ok) {
       let d = "";
+      let status = r.status;
       try {
         const j = await r.json();
-        d = j.error || j.detail || "";
+        if (j.status) status = j.status;
+        d = j.message || j.error || j.detail || "";
       } catch (e) {
-        try { d = (await r.text()).slice(0, 200); } catch (e2) {}
+        try { d = (await r.text()).slice(0, 300); } catch (e2) {}
       }
-      if (r.status === 429) throw { code: "rate_limited", status: 429, detail: d || "Quá giới hạn tần suất yêu cầu AI (30 yêu cầu/phút hoặc 800 yêu cầu/ngày)." };
-      if (r.status === 400 || r.status === 401 || r.status === 403) throw { code: "not_granted", status: r.status, detail: d || "Quyền truy cập AI không hợp lệ." };
-      throw { code: "error", status: r.status, detail: d || ("Lỗi máy chủ AI (" + r.status + ")") };
+      const fullDetail = d ? `[${status}] ${d}` : `[${status}] Lỗi kết nối AI`;
+      throw { code: "error", status: status, message: fullDetail, detail: fullDetail };
     }
     const j = await r.json();
     return {
@@ -227,7 +266,8 @@ async function viaGemini(prompt){
   }
 
   var k=aiKey();if(!k)throw{code:"not_granted",detail:"Chưa cấu hình API Key."};var r;
-  var mdl = (function(){try{return localStorage.getItem("blingo_ai_model")}catch(e){return ""}})() || "gemini-flash-latest";
+  var mdl = (function(){try{return localStorage.getItem("blingo_ai_model")}catch(e){return ""}})() || "gemini-3.8-flash";
+  if (mdl === "gemini-2.5-flash" || mdl === "gemini-flash-latest" || mdl === "gemini-1.5-flash") mdl = "gemini-3.8-flash";
   try{r=await fetch("https://generativelanguage.googleapis.com/v1beta/models/"+mdl+":generateContent",{method:"POST",headers:{"Content-Type":"application/json","x-goog-api-key":k},body:JSON.stringify({contents:[{role:"user",parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:24000,temperature:0.7}})})}catch(e){throw{code:"network"}}
   if(!r.ok)await bad(r);var j=await r.json(),c=j.candidates&&j.candidates[0];if(!c||!c.content)throw{code:"error",detail:"Gemini không trả nội dung"+(c&&c.finishReason?" ("+c.finishReason+")":"")};
   return{text:(c.content.parts||[]).map(function(p){return p.text||""}).join(""),truncated:c.finishReason==="MAX_TOKENS"};
@@ -268,8 +308,109 @@ const today = () => new Date().toISOString().slice(0, 10);
 const $ = id => document.getElementById(id);
 const val = id => ($(id) || {}).value || "";
 
+function copyText(txt) {
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(txt).catch(() => fallbackCopy(txt));
+      return;
+    }
+  } catch(e) {}
+  fallbackCopy(txt);
+}
+function fallbackCopy(txt) {
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = txt;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    document.body.removeChild(ta);
+  } catch(e) {}
+}
+
+function persistLocalAssignments() {
+  try {
+    if (S.a && Array.isArray(S.a) && S.a.length) {
+      const key = ME ? `blingo_asg_${ME.uid}` : "blingo_asg_default";
+      localStorage.setItem(key, JSON.stringify(S.a));
+      localStorage.setItem("blingo_asg_latest", JSON.stringify(S.a));
+    }
+  } catch (e) {}
+}
+
+function restoreLocalAssignments() {
+  try {
+    const key = ME ? `blingo_asg_${ME.uid}` : "blingo_asg_default";
+    const raw = localStorage.getItem(key) || localStorage.getItem("blingo_asg_latest") || localStorage.getItem("blingo_asg_default");
+    if (raw) {
+      const list = JSON.parse(raw);
+      if (Array.isArray(list) && list.length) {
+        const asgMap = new Map();
+        for (const a of (S.a || [])) {
+          if (a && (a.id || a.code)) asgMap.set(a.id || a.code, { ...a, subs: a.subs || [] });
+        }
+        for (const a of list) {
+          if (!a || (!a.id && !a.code)) continue;
+          const k = a.id || a.code;
+          if (!asgMap.has(k)) {
+            asgMap.set(k, { ...a, subs: a.subs || [] });
+          }
+        }
+        S.a = Array.from(asgMap.values());
+      }
+    }
+  } catch (e) {}
+}
+
+async function loadTeacherAssignmentsFromServer() {
+  try {
+    const headers = {};
+    if (ME) {
+      const token = await ME.getIdToken();
+      headers["Authorization"] = "Bearer " + token;
+    }
+    const resp = await fetch("/api/teacher/assignments", { headers });
+    if (resp.ok) {
+      const data = await resp.json();
+      if (Array.isArray(data.assignments) && data.assignments.length) {
+        let changed = false;
+        const asgMap = new Map();
+        for (const a of (S.a || [])) {
+          if (a && (a.id || a.code)) asgMap.set(a.id || a.code, { ...a, subs: a.subs || [] });
+        }
+        for (const a of data.assignments) {
+          if (!a || (!a.id && !a.code)) continue;
+          const k = a.id || a.code;
+          const existing = asgMap.get(k);
+          if (!existing) {
+            asgMap.set(k, { ...a, subs: a.subs || [] });
+            changed = true;
+          } else {
+            const exSubs = existing.subs || [];
+            const newSubs = a.subs || [];
+            if (newSubs.length > exSubs.length) {
+              existing.subs = newSubs;
+              changed = true;
+            }
+          }
+        }
+        if (changed || S.a.length !== asgMap.size) {
+          S.a = Array.from(asgMap.values());
+          persistLocalAssignments();
+          render();
+        }
+      }
+    }
+  } catch (e) {
+    console.warn("loadTeacherAssignmentsFromServer error:", e);
+  }
+}
+
 /* Save state to Firestore under users/{uid} */
 function save() {
+  persistLocalAssignments();
   if (!ME) return;
   clearTimeout(saveTimer);
   saveTimer = setTimeout(async () => {
@@ -279,8 +420,17 @@ function save() {
         me: S.me || ME.displayName || ME.email || "thầy/cô",
         email: ME.email || "",
         c: S.c || [],
-        e: S.e || [],
-        a: S.a || [],
+        e: (S.e || []).map(x => ({ id: x.id, title: x.title, src: x.src || "", ts: x.ts || Date.now(), count: (x.qs||[]).length })),
+        a: (S.a || []).map(a => ({
+          id: a.id,
+          eid: a.eid,
+          cid: a.cid || "",
+          code: a.code,
+          title: a.title,
+          set: a.set,
+          at: a.at || Date.now(),
+          subs: Array.isArray(a.subs) ? a.subs : []
+        })),
         t: S.t || [],
         th: S.th || "",
         sp: S.sp || [],
@@ -295,6 +445,7 @@ function save() {
 
 /* Save state to Firestore immediately */
 async function saveNow() {
+  persistLocalAssignments();
   if (!ME) return;
   clearTimeout(saveTimer);
   try {
@@ -303,8 +454,17 @@ async function saveNow() {
       me: S.me || ME.displayName || ME.email || "thầy/cô",
       email: ME.email || "",
       c: S.c || [],
-      e: S.e || [],
-      a: S.a || [],
+      e: (S.e || []).map(x => ({ id: x.id, title: x.title, src: x.src || "", ts: x.ts || Date.now(), count: (x.qs||[]).length })),
+      a: (S.a || []).map(a => ({
+        id: a.id,
+        eid: a.eid,
+        cid: a.cid || "",
+        code: a.code,
+        title: a.title,
+        set: a.set,
+        at: a.at || Date.now(),
+        subs: Array.isArray(a.subs) ? a.subs : []
+      })),
       t: S.t || [],
       th: S.th || "",
       sp: S.sp || [],
@@ -518,8 +678,9 @@ function acctV() {
 
 /* AI Key UI */
 function aiKeyUI(){
-  let k = "", mdl = "gemini-2.5-flash";
+  let k = "", mdl = "gemini-3.8-flash";
   try { k = localStorage.getItem("blingo_ai_key") || ""; mdl = localStorage.getItem("blingo_ai_model") || mdl; } catch(e){}
+  if (mdl === "gemini-2.5-flash" || mdl === "gemini-flash-latest") mdl = "gemini-3.8-flash";
   const connected = !!k;
   return `<div class="card" style="background:var(--bg);margin:10px 0">
   <b>Kết nối AI (Gemini)</b> ${connected ? '<span class="tag">Đã kết nối</span>' : '<span class="tag w">Chưa kết nối</span>'}
@@ -535,7 +696,7 @@ function aiKeyUI(){
   <label for="ai_model" class="small mute" style="margin-top:10px">Mô hình Gemini</label>
   <div class="row">
     <select id="ai_model" style="flex:1;min-width:180px">
-      <option value="gemini-2.5-flash" ${mdl=="gemini-2.5-flash"?"selected":""}>Gemini 2.5 Flash – Nhanh &amp; chuẩn (khuyến nghị)</option>
+      <option value="gemini-3.8-flash" ${mdl=="gemini-3.8-flash"?"selected":""}>Gemini 3.8 Flash – Nhanh &amp; chuẩn (khuyến nghị)</option>
       <option value="gemini-2.5-pro" ${mdl=="gemini-2.5-pro"?"selected":""}>Gemini 2.5 Pro – Nâng cao</option>
     </select>
     <button class="btn o s" data-act="aiModelSave">Lưu</button>
@@ -562,8 +723,7 @@ const NAV = [
 let view = "home", tab = 0, E = { mode: "wiz", title: "", qs: [], src: "teacher", lesson: "", n: "10", lv: "B1", open: null }, CSV = "", PR = "";
 
 const cls = id => S.c.find(c => c.id == id);
-const ex = id => S.e.find(e => e.id == id);
-const subs = () => S.a.flatMap(a => a.subs.map(s => ({ ...s, a })));
+const subs = () => (S.a || []).flatMap(a => (a && Array.isArray(a.subs) ? a.subs : []).map(s => ({ ...s, a })));
 const unseen = () => subs().filter(s => !s.seen);
 
 let REP = {
@@ -664,6 +824,9 @@ function render() {
 
   $("app").style.maxWidth = (view == "viewer" || view == "take") ? "1400px" : "";
   if (V[view]) $("app").innerHTML = V[view]();
+  if (view == "home" && ME) {
+    setTimeout(renderHomePerformanceChart, 0);
+  }
 }
 
 /* Real-time exams synchronization from Firestore /exams collection */
@@ -713,6 +876,9 @@ onAuthStateChanged(auth, async user => {
   if (user) {
     ME = user;
     AUE = ""; AUOK = "";
+    restoreLocalAssignments();
+    loadTeacherAssignmentsFromServer();
+
     const uref = doc(db, "users", user.uid);
     if (authUnsubDoc) authUnsubDoc();
     
@@ -727,7 +893,28 @@ onAuthStateChanged(auth, async user => {
         if ((!S.e || !S.e.length) && Array.isArray(d.e) && d.e.length > 0) {
           S.e = d.e;
         }
-        S.a = Array.isArray(d.a) ? d.a : [];
+        
+        // Merge remote assignments with local assignments safely
+        const remoteAsg = Array.isArray(d.a) ? d.a : [];
+        const asgMap = new Map();
+        for (const a of remoteAsg) {
+          if (a && (a.id || a.code)) asgMap.set(a.id || a.code, { ...a, subs: Array.isArray(a.subs) ? a.subs : [] });
+        }
+        for (const a of (S.a || [])) {
+          if (!a || (!a.id && !a.code)) continue;
+          const k = a.id || a.code;
+          const existing = asgMap.get(k);
+          if (!existing) {
+            asgMap.set(k, { ...a, subs: Array.isArray(a.subs) ? a.subs : [] });
+          } else {
+            const exSubs = existing.subs || [];
+            const localSubs = a.subs || [];
+            existing.subs = localSubs.length >= exSubs.length ? localSubs : exSubs;
+          }
+        }
+        S.a = Array.from(asgMap.values());
+        persistLocalAssignments();
+
         S.t = Array.isArray(d.t) ? d.t : [];
         S.th = d.th || "";
         S.sp = Array.isArray(d.sp) ? d.sp : [];
@@ -738,20 +925,20 @@ onAuthStateChanged(auth, async user => {
           window._teacherSyncInterval = setInterval(syncAllTeacherAssignments, 8000);
         }
       } else {
-        // Initialize user doc in Firestore
+        // Initialize user doc in Firestore preserving local assignments
         S.me = user.displayName || user.email.split("@")[0];
         setDoc(uref, {
           me: S.me,
           email: user.email || "",
-          c: [],
+          c: S.c || [],
           e: [],
-          a: [],
+          a: S.a || [],
           t: [],
           th: "",
           sp: [],
           tpp: {},
           updatedAt: Date.now()
-        });
+        }, { merge: true });
         render();
       }
     }, err => {
@@ -766,6 +953,412 @@ onAuthStateChanged(auth, async user => {
     render();
   }
 });
+
+/* ====================================================
+   RECHARTS STUDENT PERFORMANCE DISTRIBUTION (TỔNG QUAN)
+==================================================== */
+
+let HOME_CHART = {
+  mode: "byAssignment", // "byAssignment" | "overall" | "trend"
+  classFilter: "all",
+  useDemo: null
+};
+
+function getHomeChartData() {
+  const allAsgs = S.a || [];
+  let filtered = allAsgs.filter(a => {
+    if (HOME_CHART.classFilter !== "all" && a.cid != HOME_CHART.classFilter) return false;
+    return true;
+  });
+
+  const withSubs = filtered.filter(a => Array.isArray(a.subs) && a.subs.length > 0);
+  const isDemo = HOME_CHART.useDemo === true || (HOME_CHART.useDemo !== false && withSubs.length === 0);
+
+  if (isDemo) {
+    const demoItems = [
+      {
+        id: "d1",
+        title: "Kiểm tra 15p – Unit 1 Family Life",
+        shortTitle: "15p Unit 1",
+        className: "Lớp 10A1",
+        total: 38,
+        gioi: 14,
+        kha: 16,
+        tb: 6,
+        yeu: 2,
+        avg: 7.8,
+        passRate: 95
+      },
+      {
+        id: "d2",
+        title: "Giữa kỳ I – Đề ôn tập số 1",
+        shortTitle: "Giữa kỳ 1",
+        className: "Lớp 10A1",
+        total: 40,
+        gioi: 11,
+        kha: 19,
+        tb: 7,
+        yeu: 3,
+        avg: 7.3,
+        passRate: 92
+      },
+      {
+        id: "d3",
+        title: "Kiểm tra 15p – Unit 2 Humans & Environment",
+        shortTitle: "15p Unit 2",
+        className: "Lớp 11A2",
+        total: 36,
+        gioi: 15,
+        kha: 14,
+        tb: 5,
+        yeu: 2,
+        avg: 8.0,
+        passRate: 94
+      },
+      {
+        id: "d4",
+        title: "Đề thi thử THPT Quốc gia số 1",
+        shortTitle: "Thi thử THPT",
+        className: "Lớp 12A1",
+        total: 42,
+        gioi: 12,
+        kha: 20,
+        tb: 8,
+        yeu: 2,
+        avg: 7.6,
+        passRate: 95
+      },
+      {
+        id: "d5",
+        title: "Kiểm tra 45p – Unit 3 Music & Arts",
+        shortTitle: "45p Unit 3",
+        className: "Lớp 10A1",
+        total: 39,
+        gioi: 18,
+        kha: 15,
+        tb: 5,
+        yeu: 1,
+        avg: 8.3,
+        passRate: 97
+      }
+    ];
+    return { list: demoItems, isDemo: true, totalSubs: demoItems.reduce((acc, x) => acc + x.total, 0) };
+  }
+
+  // Real data: Sort by assignment date ascending (chronological)
+  const sorted = [...withSubs].sort((x, y) => (x.at || 0) - (y.at || 0));
+  const recent = sorted.slice(-6);
+
+  const list = recent.map(a => {
+    const scale = a.set?.scale || 10;
+    const c = cls(a.cid);
+    const e = ex(a.eid);
+    const fullTitle = a.title || (e && e.title) || ("Bài " + a.code);
+    let shortTitle = fullTitle;
+    if (shortTitle.length > 18) {
+      shortTitle = shortTitle.slice(0, 16) + "…";
+    }
+
+    let g = 0, k = 0, tb = 0, y = 0, sum = 0;
+    const subsList = a.subs || [];
+    subsList.forEach(s => {
+      const rawSc = Number(s.sc) || 0;
+      const sc = scale > 10 ? (rawSc / scale) * 10 : rawSc;
+      sum += sc;
+      if (sc >= 8.5) g++;
+      else if (sc >= 7.0) k++;
+      else if (sc >= 5.0) tb++;
+      else y++;
+    });
+
+    const total = subsList.length;
+    const avg = total > 0 ? Number((sum / total).toFixed(1)) : 0;
+    const passCount = g + k + tb;
+    const passRate = total > 0 ? Math.round((passCount / total) * 100) : 0;
+
+    return {
+      id: a.id,
+      title: fullTitle,
+      shortTitle: shortTitle,
+      className: c ? "Lớp " + c.n : "Toàn khối",
+      total: total,
+      gioi: g,
+      kha: k,
+      tb: tb,
+      yeu: y,
+      avg: avg,
+      passRate: passRate
+    };
+  });
+
+  return {
+    list: list,
+    isDemo: false,
+    totalSubs: list.reduce((acc, x) => acc + x.total, 0)
+  };
+}
+
+function getOverallPerformance(list) {
+  let g = 0, k = 0, tb = 0, y = 0, total = 0, sumScore = 0;
+  (list || []).forEach(item => {
+    g += item.gioi || 0;
+    k += item.kha || 0;
+    tb += item.tb || 0;
+    y += item.yeu || 0;
+    total += item.total || 0;
+    sumScore += (item.avg || 0) * (item.total || 0);
+  });
+  const overallAvg = total > 0 ? (sumScore / total).toFixed(1) : "0.0";
+  const passCount = g + k + tb;
+  const passRate = total > 0 ? Math.round((passCount / total) * 100) : 0;
+
+  const distribution = [
+    { name: "Giỏi (8.5 - 10)", shortName: "Giỏi", count: g, pct: total ? Math.round((g / total) * 100) : 0, fill: "#127a55" },
+    { name: "Khá (7.0 - 8.4)", shortName: "Khá", count: k, pct: total ? Math.round((k / total) * 100) : 0, fill: "#1f5bff" },
+    { name: "Trung bình (5.0 - 6.9)", shortName: "Trung bình", count: tb, pct: total ? Math.round((tb / total) * 100) : 0, fill: "#f59e0b" },
+    { name: "Yếu (< 5.0)", shortName: "Yếu", count: y, pct: total ? Math.round((y / total) * 100) : 0, fill: "#ef4444" }
+  ];
+
+  return { distribution, total, overallAvg, passRate };
+}
+
+function homePerformanceChartCard() {
+  const { list, isDemo, totalSubs } = getHomeChartData();
+  const overall = getOverallPerformance(list);
+  const bestAsg = list.length ? [...list].sort((a, b) => (b.avg || 0) - (a.avg || 0))[0] : null;
+
+  return `
+  <div class="card" style="margin-top:16px;margin-bottom:16px">
+    <div class="row sb" style="flex-wrap:wrap;gap:12px;margin-bottom:14px">
+      <div>
+        <div class="row" style="gap:8px;align-items:center;margin-bottom:4px">
+          <h2 style="margin:0;font-size:1.15rem">📊 Phân bố kết quả bài giao gần đây</h2>
+          <span class="tag" style="background:rgba(31,91,255,.12);color:var(--pri);font-weight:700">Recharts</span>
+          ${isDemo ? '<span class="tag w">Dữ liệu mẫu</span>' : '<span class="tag" style="background:var(--okbg);color:var(--ok)">Dữ liệu thực</span>'}
+        </div>
+        <div class="mute small">
+          Thống kê phân bổ học lực (Giỏi · Khá · Trung bình · Yếu) qua các bài tập &amp; bài thi gần nhất
+        </div>
+      </div>
+
+      <div class="row" style="gap:8px;flex-wrap:wrap">
+        <div class="tabs">
+          <button data-act="homeChartMode" data-m="byAssignment" aria-pressed="${HOME_CHART.mode == 'byAssignment'}">Từng bài giao</button>
+          <button data-act="homeChartMode" data-m="overall" aria-pressed="${HOME_CHART.mode == 'overall'}">Tổng hợp phổ điểm</button>
+          <button data-act="homeChartMode" data-m="trend" aria-pressed="${HOME_CHART.mode == 'trend'}">Xu hướng điểm TB</button>
+        </div>
+
+        ${S.c && S.c.length ? `
+        <select data-act="homeChartClass" style="width:auto;min-width:130px;padding:5px 8px;font-size:.85rem;border-radius:8px">
+          <option value="all" ${HOME_CHART.classFilter == 'all' ? 'selected' : ''}>Tất cả các lớp</option>
+          ${S.c.map(c => `<option value="${c.id}" ${HOME_CHART.classFilter == c.id ? 'selected' : ''}>Lớp ${esc(c.n)}</option>`).join("")}
+        </select>` : ''}
+
+        <button class="btn o s" data-act="homeChartToggleDemo" title="Chuyển đổi giữa dữ liệu thực và dữ liệu mẫu thử nghiệm">
+          ${isDemo ? '👁️ Đang xem mẫu' : '🧪 Thử dữ liệu mẫu'}
+        </button>
+      </div>
+    </div>
+
+    <!-- Summary KPI mini cards -->
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px">
+      <div style="background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 14px">
+        <div class="mute small">Tổng lượt làm bài</div>
+        <b style="font-size:1.35rem;color:var(--ink);display:block;margin-top:2px">${totalSubs}</b>
+      </div>
+      <div style="background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 14px">
+        <div class="mute small">Điểm trung bình</div>
+        <b style="font-size:1.35rem;color:var(--pri);display:block;margin-top:2px">${overall.overallAvg}/10</b>
+      </div>
+      <div style="background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 14px">
+        <div class="mute small">Tỉ lệ đạt (≥ 5.0)</div>
+        <b style="font-size:1.35rem;color:var(--ok);display:block;margin-top:2px">${overall.passRate}%</b>
+      </div>
+      <div style="background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 14px">
+        <div class="mute small">Bài điểm cao nhất</div>
+        <b style="font-size:1.05rem;color:var(--ink);display:block;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${bestAsg ? esc(bestAsg.title) : ''}">
+          ${bestAsg ? esc(bestAsg.shortTitle) + ' (' + bestAsg.avg + ')' : '–'}
+        </b>
+      </div>
+    </div>
+
+    <!-- Recharts visualization container -->
+    <div id="home_recharts_container" style="width:100%;height:320px;min-height:320px;position:relative"></div>
+
+    <!-- Distribution tier footer legend -->
+    <div style="margin-top:14px;padding-top:10px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:center;font-size:.85rem">
+      <div class="row" style="gap:12px;flex-wrap:wrap">
+        <span style="display:inline-flex;align-items:center;gap:6px"><i style="width:10px;height:10px;border-radius:50%;background:#127a55;display:inline-block"></i> <b>Giỏi (8.5-10):</b> ${overall.distribution[0].count} HS (${overall.distribution[0].pct}%)</span>
+        <span style="display:inline-flex;align-items:center;gap:6px"><i style="width:10px;height:10px;border-radius:50%;background:#1f5bff;display:inline-block"></i> <b>Khá (7.0-8.4):</b> ${overall.distribution[1].count} HS (${overall.distribution[1].pct}%)</span>
+        <span style="display:inline-flex;align-items:center;gap:6px"><i style="width:10px;height:10px;border-radius:50%;background:#f59e0b;display:inline-block"></i> <b>TB (5.0-6.9):</b> ${overall.distribution[2].count} HS (${overall.distribution[2].pct}%)</span>
+        <span style="display:inline-flex;align-items:center;gap:6px"><i style="width:10px;height:10px;border-radius:50%;background:#ef4444;display:inline-block"></i> <b>Yếu (&lt;5.0):</b> ${overall.distribution[3].count} HS (${overall.distribution[3].pct}%)</span>
+      </div>
+      <div>
+        <button class="lnk small" data-go="rep">Chi tiết kết quả &amp; báo cáo →</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderHomePerformanceChart() {
+  const container = $("home_recharts_container");
+  if (!container) return;
+
+  if (!window.React || !window.ReactDOM || !window.Recharts) {
+    container.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:center;height:240px;color:var(--mute);flex-direction:column;gap:8px">
+        <div class="spin" style="width:24px;height:24px"></div>
+        <div class="small">Đang tải thư viện biểu đồ Recharts…</div>
+      </div>
+    `;
+    setTimeout(renderHomePerformanceChart, 150);
+    return;
+  }
+
+  const { React, ReactDOM, Recharts } = window;
+  const { ResponsiveContainer, BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Cell, ReferenceLine } = Recharts;
+
+  const { list, isDemo } = getHomeChartData();
+  const overall = getOverallPerformance(list);
+
+  if (!list || list.length === 0) {
+    container.innerHTML = `
+      <div class="eh" style="padding:30px 10px">
+        <div class="ic">📊</div>
+        <b style="font-size:1.05rem">Chưa có bài nộp nào từ học sinh</b>
+        <div class="mute small" style="margin:6px auto 14px;max-width:440px">
+          Khi học sinh nộp bài, hệ thống sẽ tự động vẽ biểu đồ phân bố điểm số (Giỏi, Khá, Trung bình, Yếu) để bạn theo dõi chất lượng.
+        </div>
+        <div class="row" style="justify-content:center;gap:8px">
+          <button class="btn s" data-go="assign">Giao bài cho lớp ngay</button>
+          <button class="btn o s" data-act="homeChartToggleDemo">Xem biểu đồ với dữ liệu mẫu</button>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  const isDark = document.documentElement.dataset.theme === "dark";
+  const gridColor = isDark ? "#283155" : "#e3e7f2";
+  const textColor = isDark ? "#a0a9c9" : "#5f6a88";
+
+  function CustomTooltip(props) {
+    const { active, payload, label } = props;
+    if (!active || !payload || !payload.length) return null;
+    const item = list.find(x => x.shortTitle === label) || (payload[0] && payload[0].payload) || {};
+    return React.createElement("div", {
+      style: {
+        background: isDark ? "#171e38" : "#ffffff",
+        color: isDark ? "#eef0f8" : "#101a33",
+        border: "1px solid " + (isDark ? "#283155" : "#e3e7f2"),
+        borderRadius: "10px",
+        padding: "10px 14px",
+        boxShadow: "0 10px 25px rgba(0,0,0,0.2)",
+        fontSize: "12px",
+        lineHeight: "1.4",
+        minWidth: "210px"
+      }
+    },
+      React.createElement("div", { style: { fontWeight: "700", fontSize: "13px", marginBottom: "3px" } }, item.title || label),
+      item.className ? React.createElement("div", { style: { color: isDark ? "#a0a9c9" : "#5f6a88", fontSize: "11px", marginBottom: "8px" } }, item.className + " · " + (item.total || 0) + " học sinh nộp bài") : null,
+      payload.map((p, idx) => {
+        const val = Number(p.value) || 0;
+        const total = item.total || 1;
+        const pct = Math.round((val / total) * 100);
+        return React.createElement("div", {
+          key: idx,
+          style: { display: "flex", justifyContent: "space-between", alignItems: "center", margin: "3px 0", gap: "10px" }
+        },
+          React.createElement("span", { style: { display: "flex", alignItems: "center", gap: "6px" } },
+            React.createElement("span", { style: { width: "9px", height: "9px", borderRadius: "50%", background: p.color || p.fill, display: "inline-block" } }),
+            React.createElement("span", null, p.name)
+          ),
+          React.createElement("b", null, val + " HS (" + pct + "%)")
+        );
+      }),
+      item.avg != null ? React.createElement("div", {
+        style: {
+          marginTop: "8px",
+          paddingTop: "6px",
+          borderTop: "1px solid " + (isDark ? "#283155" : "#e3e7f2"),
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center"
+        }
+      },
+        React.createElement("span", { style: { color: isDark ? "#a0a9c9" : "#5f6a88" } }, "Điểm TB bài thi:"),
+        React.createElement("b", { style: { color: "var(--pri, #1f5bff)", fontSize: "13px" } }, item.avg + "/10")
+      ) : null
+    );
+  }
+
+  let chartElement;
+
+  if (HOME_CHART.mode === "trend") {
+    chartElement = React.createElement(ResponsiveContainer, { width: "100%", height: 310 },
+      React.createElement(AreaChart, { data: list, margin: { top: 15, right: 25, left: -10, bottom: 20 } },
+        React.createElement("defs", null,
+          React.createElement("linearGradient", { id: "avgGradHome", x1: "0", y1: "0", x2: "0", y2: "1" },
+            React.createElement("stop", { offset: "5%", stopColor: "#1f5bff", stopOpacity: 0.35 }),
+            React.createElement("stop", { offset: "95%", stopColor: "#1f5bff", stopOpacity: 0.02 })
+          )
+        ),
+        React.createElement(CartesianGrid, { strokeDasharray: "3 3", stroke: gridColor, opacity: 0.6 }),
+        React.createElement(XAxis, { dataKey: "shortTitle", stroke: textColor, fontSize: 12, tickLine: false }),
+        React.createElement(YAxis, { domain: [0, 10], ticks: [0, 2, 4, 5, 6, 8, 10], stroke: textColor, fontSize: 12, tickLine: false }),
+        React.createElement(Tooltip, { content: React.createElement(CustomTooltip) }),
+        React.createElement(ReferenceLine, { y: 5.0, stroke: "#ef4444", strokeDasharray: "4 4", label: { value: "Đạt (5.0)", fill: "#ef4444", fontSize: 11, position: "insideTopLeft" } }),
+        React.createElement(ReferenceLine, { y: 8.0, stroke: "#127a55", strokeDasharray: "4 4", label: { value: "Giỏi (8.0)", fill: "#127a55", fontSize: 11, position: "insideTopLeft" } }),
+        React.createElement(Area, { type: "monotone", dataKey: "avg", name: "Điểm TB", stroke: "#1f5bff", strokeWidth: 3, fillOpacity: 1, fill: "url(#avgGradHome)", dot: { r: 5, fill: "#1f5bff", strokeWidth: 2, stroke: "#fff" }, activeDot: { r: 7 } })
+      )
+    );
+  } else if (HOME_CHART.mode === "overall") {
+    chartElement = React.createElement(ResponsiveContainer, { width: "100%", height: 310 },
+      React.createElement(BarChart, { data: overall.distribution, margin: { top: 15, right: 25, left: -10, bottom: 20 } },
+        React.createElement(CartesianGrid, { strokeDasharray: "3 3", stroke: gridColor, opacity: 0.6 }),
+        React.createElement(XAxis, { dataKey: "shortName", stroke: textColor, fontSize: 12, tickLine: false }),
+        React.createElement(YAxis, { stroke: textColor, fontSize: 12, tickLine: false, allowDecimals: false }),
+        React.createElement(Tooltip, {
+          formatter: (val, name, entry) => [val + " học sinh (" + entry.payload.pct + "%)", entry.payload.name],
+          contentStyle: { background: isDark ? "#171e38" : "#fff", border: "1px solid " + gridColor, borderRadius: "10px", fontSize: "12px", color: isDark ? "#eef0f8" : "#101a33" }
+        }),
+        React.createElement(Bar, { dataKey: "count", name: "Số học sinh", radius: [6, 6, 0, 0] },
+          overall.distribution.map((entry, index) =>
+            React.createElement(Cell, { key: "cell-" + index, fill: entry.fill })
+          )
+        )
+      )
+    );
+  } else {
+    // Default: Mode "byAssignment"
+    chartElement = React.createElement(ResponsiveContainer, { width: "100%", height: 310 },
+      React.createElement(BarChart, { data: list, margin: { top: 15, right: 25, left: -10, bottom: 20 } },
+        React.createElement(CartesianGrid, { strokeDasharray: "3 3", stroke: gridColor, opacity: 0.6 }),
+        React.createElement(XAxis, { dataKey: "shortTitle", stroke: textColor, fontSize: 12, tickLine: false }),
+        React.createElement(YAxis, { stroke: textColor, fontSize: 12, tickLine: false, allowDecimals: false }),
+        React.createElement(Tooltip, { content: React.createElement(CustomTooltip) }),
+        React.createElement(Legend, {
+          verticalAlign: "top",
+          height: 36,
+          iconType: "circle",
+          wrapperStyle: { fontSize: "12px", paddingTop: "0px" }
+        }),
+        React.createElement(Bar, { dataKey: "gioi", name: "Giỏi (8.5-10)", fill: "#127a55", stackId: "dist", radius: [0, 0, 0, 0] }),
+        React.createElement(Bar, { dataKey: "kha", name: "Khá (7.0-8.4)", fill: "#1f5bff", stackId: "dist", radius: [0, 0, 0, 0] }),
+        React.createElement(Bar, { dataKey: "tb", name: "Trung bình (5.0-6.9)", fill: "#f59e0b", stackId: "dist", radius: [0, 0, 0, 0] }),
+        React.createElement(Bar, { dataKey: "yeu", name: "Yếu (<5.0)", fill: "#ef4444", stackId: "dist", radius: [4, 4, 0, 0] })
+      )
+    );
+  }
+
+  if (window.__homeChartRoot) {
+    try { window.__homeChartRoot.unmount(); } catch (e) {}
+    window.__homeChartRoot = null;
+  }
+  const root = ReactDOM.createRoot(container);
+  window.__homeChartRoot = root;
+  root.render(chartElement);
+}
 
 /* Views definitions */
 const V = {
@@ -791,6 +1384,7 @@ const V = {
     return `<div class="card hero"><div class="row sb"><div><div class="dt">${esc(dts)}</div><h1>${gr}, ${esc(S.me)}!</h1><div class="sub">Hôm nay có <b>${nu}</b> bài nộp mới và <b>${S.t.filter(t => !t.done).length}</b> nhiệm vụ đang theo dõi.</div></div><div class="row"><button class="btn" data-go="create">+ Tạo đề</button><button class="btn o" data-go="assign">Giao bài</button></div></div></div>
     ${done < 3 ? `<div class="card"><div class="row" style="gap:14px;margin-bottom:6px"><div class="ring" style="background:conic-gradient(var(--pri) ${deg}deg,var(--line) 0)"><i>${done}/3</i></div><div><h2 style="margin:0">Bắt đầu nhanh</h2><div class="mute small">Ba bước để giao bài đầu tiên cho lớp.</div></div></div>${steps.map((x, i) => `<div class="row sb" style="padding:8px 0;border-top:1px solid var(--line)"><span>${x[0] ? "✓ " : "○ "}${i + 1}. ${x[1]}</span>${x[0] ? '<span class="tag">Xong</span>' : `<button class="btn s" data-go="${x[2]}">${x[3]}</button>`}</div>`).join("")}</div>` : ""}
     <div class="grid">${kp("🏫", "rgba(31,91,255,.12)", "var(--pri)", S.c.length, "Tổng số lớp", "classes")}${kp("👩‍🎓", "rgba(22,163,74,.14)", "var(--ok)", stu, "Tổng số học sinh", "classes")}${kp("📥", "rgba(245,158,11,.16)", "#d97706", nu, "Bài nộp mới cần xem", "rep")}${kp("📝", "rgba(139,92,246,.15)", "#7c3aed", open, "Bài giao đang mở", "assign")}</div>
+    ${homePerformanceChartCard()}
     <h2 style="margin-top:16px">Lối tắt</h2>
     <div class="hgrid" style="margin-bottom:14px">${tl("✨", "rgba(31,91,255,.12)", "Tạo đề bằng AI", "Theo sách Global Success", "create")}${tl("📤", "rgba(22,163,74,.14)", "Giao bài cho lớp", "Đặt hạn, thời gian, số lần", "assign")}${tl("🎯", "rgba(245,158,11,.16)", "Phòng thi thử THPT", "Đề 40 câu, 50 phút", "thpt")}${tl("🎤", "rgba(236,72,153,.14)", "Luyện nói với AI", "Giám khảo Speaking", "tutor")}${tl("📚", "rgba(139,92,246,.15)", "Kho đề đã lưu", "Xem, xuất Word", "bank")}${tl("📊", "rgba(14,165,233,.15)", "Kết quả &amp; Báo cáo", "Điểm theo lớp, xuất Excel", "rep")}</div>
     <div class="card"><h2>Tiến độ theo lớp</h2>${clsList.length ? clsList.map(({ c, st }) => `<div style="padding:8px 0;border-top:1px solid var(--line)"><div class="row sb"><b>${esc(c.n)}</b><span class="mute small">${c.st.length} HS · ${st.A.length} bài giao · ${st.avg == null ? "chưa có điểm" : "TB " + st.avg.toFixed(1)}${st.rate == null ? "" : " · nộp " + st.rate + "%"}</span></div><div class="pbar" style="margin-top:6px"><i style="width:${st.avg == null ? 0 : Math.min(100, st.avg * 10)}%;background:${clsCol(st.avg)}"></i></div></div>`).join("") : `<div class="eh"><div class="ic">🏫</div>Chưa có lớp nào.<br><br><button class="btn" data-go="classes">Tạo lớp đầu tiên</button></div>`}</div>
@@ -2466,7 +3060,7 @@ async function syncAllTeacherAssignments() {
 function createAssign() {
   const e = ex(AS.sel);
   if (!e) return toast("Hãy chọn một đề.");
-  const s = AS.s;
+  const s = AS.s || defSet(e);
   const min = Math.max(1, Math.min(300, Math.round(+s.min || 0)));
   if (!min) return toast("Hãy nhập thời gian làm bài (phút).");
 
@@ -2490,7 +3084,9 @@ function createAssign() {
     at: Date.now()
   };
 
+  S.a = S.a || [];
   S.a.push(a);
+  persistLocalAssignments();
   saveNow();
   syncAssignmentToServer(a, e, cls(a.cid));
 
@@ -2528,17 +3124,23 @@ function assignV() {
   </div>
   <div style="margin-top:16px"><button class="btn" data-act="mkAsg">Tạo bài giao &amp; lấy link</button></div>` : '<div class="empty">Chọn một đề ở bên trái để cài đặt bài thi.</div>';
 
-  const AL = S.a.length ? [...S.a].reverse().map(a => {
+  const AL = S.a && S.a.length ? [...S.a].reverse().map(a => {
     const st = aStatus(a), t = ex(a.eid);
-    return `<div class="card"><div class="row sb"><div><b>${esc(a.title || (t && t.title) || "")}</b> <span class="tag ${st[1]}">${st[0]}</span><div class="mute small">${a.code ? "Mã bài: <b>" + a.code + "</b> · Link: <code>/lam-bai/" + a.code + "</code> · " : ""}Đã nộp ${a.subs.length}${a.set ? " · " + a.set.min + " phút" : ""}</div></div><div class="row" style="gap:6px"><button class="btn s" data-act="aopen" data-id="${a.id}">Xem kết quả</button><button class="btn o s" data-act="asgCopyLink" data-code="${a.code}">Link</button><button class="btn d s" data-act="delA" data-id="${a.id}">Xóa</button></div></div></div>`;
+    const subCount = (a.subs || []).length;
+    return `<div class="card"><div class="row sb"><div><b>${esc(a.title || (t && t.title) || "")}</b> <span class="tag ${st[1]}">${st[0]}</span><div class="mute small">${a.code ? "Mã bài: <b>" + a.code + "</b> · Link: <a href=\"/lam-bai/" + a.code + "\" target=\"_blank\" rel=\"noopener\" style=\"color:var(--pri);font-weight:600\">/lam-bai/" + a.code + "</a> · " : ""}Đã nộp ${subCount}${a.set ? " · " + a.set.min + " phút" : ""}</div></div><div class="row" style="gap:6px"><button class="btn s" data-act="aopen" data-id="${a.id}">Xem kết quả</button><button class="btn o s" data-act="asgCopyLink" data-code="${a.code}">📋 Link</button><a class="btn o s" href="/lam-bai/${a.code}" target="_blank" rel="noopener">🚀 Làm thử</a><button class="btn d s" data-act="delA" data-id="${a.id}">Xóa</button></div></div></div>`;
   }).join("") : '<div class="card empty">Chưa có bài nào được giao.</div>';
 
-  return `<h1>Giao bài cho lớp</h1><div class="split2"><div><h2>1. Chọn đề</h2>${list}</div><div class="card"><h2>2. Cài đặt bài thi</h2>${form}</div></div><h2>Bài đã giao (${S.a.length})</h2>${AL}`;
+  return `<h1>Giao bài cho lớp</h1><div class="split2"><div><h2>1. Chọn đề</h2>${list}</div><div class="card"><h2>2. Cài đặt bài thi</h2>${form}</div></div><h2>Bài đã giao (${(S.a || []).length})</h2>${AL}`;
 }
 
 function asgdV() {
-  const a = S.a.find(x => x.id == AD);
-  if (!a) return '<div class="card empty">Không tìm thấy bài giao.<br><br><button class="btn" data-go="assign">Quay lại</button></div>';
+  let a = (S.a || []).find(x => x && x.id == AD);
+  if (!a && AD) a = (S.a || []).find(x => x && x.code == AD);
+  if (!a && S.a && S.a.length) {
+    a = S.a[S.a.length - 1];
+    if (a) AD = a.id;
+  }
+  if (!a) return '<div class="card empty">Không tìm thấy bài giao.<br><br><button class="btn" data-go="assign">Quay lại danh sách bài giao</button></div>';
   const e = ex(a.eid), c = cls(a.cid), su = a.subs || [];
   const avg = su.length ? su.reduce((x, s) => x + Number(s.sc || 0), 0) / su.length : 0;
   const passedCount = su.filter(s => {
@@ -2557,20 +3159,21 @@ function asgdV() {
     </div>
     <div class="row" style="gap:8px">
       <button class="btn o" data-act="asgRefresh" data-code="${a.code}">🔄 Tải lại bài nộp</button>
-      <button class="btn o" data-act="asgback">Quay lại</button>
+      <button class="btn o" data-act="asgback">Quay lại danh sách</button>
     </div>
   </div>
 
   <div class="card" style="background:var(--bg);border:1.5px solid var(--pri);margin:14px 0;padding:16px">
-    <div class="row sb" style="flex-wrap:wrap;gap:10px">
-      <div>
-        <span class="mute small"><b>Link làm bài trực tiếp cho học sinh (không cần tài khoản):</b></span>
-        <div style="font-size:1.15rem;font-weight:700;color:var(--pri);margin:4px 0;word-break:break-all">${examUrl}</div>
-        <span class="small mute">Học sinh mở link, nhập họ tên để làm bài. Bài nộp được gửi thẳng vào Firestore của giáo viên.</span>
+    <div class="row sb" style="flex-wrap:wrap;gap:12px">
+      <div style="flex:1;min-width:280px">
+        <span class="mute small"><b>Link làm bài trực tiếp cho học sinh (không cần đăng nhập tài khoản):</b></span>
+        <div style="font-size:1.2rem;font-weight:700;color:var(--pri);margin:6px 0;word-break:break-all">${examUrl}</div>
+        <span class="small mute">Học sinh bấm link, nhập họ tên để làm bài. Bài nộp được gửi tự động về hệ thống của giáo viên.</span>
       </div>
-      <div class="row" style="gap:8px">
+      <div class="row" style="gap:8px;align-items:center;flex-wrap:wrap">
         <button class="btn s" data-act="asgCopyLink" data-code="${a.code}">📋 Sao chép link</button>
-        <button class="btn o s" data-act="asgOpenLink" data-code="${a.code}">🚀 Mở link thử</button>
+        <a class="btn o s" href="/lam-bai/${a.code}" target="_blank" rel="noopener">🚀 Mở trang làm bài</a>
+        <button class="btn o s" data-act="asgPreviewStudent" data-code="${a.code}">👁️ Xem trước giao diện HS</button>
       </div>
     </div>
   </div>
@@ -3057,9 +3660,12 @@ function studentV() {
     const inf = STU.info;
     const canStart = inf.status === "open";
     return `<div class="card" style="max-width:620px;margin:30px auto;padding:24px">
-      <div class="row sb" style="border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:16px">
+      <div class="row sb" style="border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:16px;flex-wrap:wrap;gap:8px">
         <div class="brand" style="margin:0"><div class="logo">B</div><div><b>B-Lingo</b><small style="color:var(--mute)">Phòng làm bài thi trực tuyến</small></div></div>
-        <span class="tag ${canStart ? '' : 'b'}">${canStart ? 'Đang mở' : 'Chưa khả dụng'}</span>
+        <div class="row" style="gap:8px">
+          <span class="tag ${canStart ? '' : 'b'}">${canStart ? 'Đang mở' : 'Chưa khả dụng'}</span>
+          <button class="btn o s" data-act="stuReturnTeacher" style="padding:4px 10px;font-size:.82rem">Quản trị Giáo viên</button>
+        </div>
       </div>
 
       <h1 style="font-size:1.4rem;margin-bottom:8px">${esc(inf.title)}</h1>
@@ -4306,6 +4912,17 @@ document.addEventListener("click", async e => {
   const b = e.target.closest("[data-act]"); if (!b) return;
   const D = b.dataset, A = D.act;
 
+  // Home Performance Chart actions
+  if (A == "homeChartMode") {
+    HOME_CHART.mode = D.m;
+    return render();
+  }
+  if (A == "homeChartToggleDemo") {
+    const info = getHomeChartData();
+    HOME_CHART.useDemo = !info.isDemo;
+    return render();
+  }
+
   // Bell & Notifications
   if (A == "bell") { NOTIF_OPEN = !NOTIF_OPEN; return render(); }
   if (A == "notifClose") { NOTIF_OPEN = false; return render(); }
@@ -4433,15 +5050,65 @@ document.addEventListener("click", async e => {
   if (A == "delA") { S.a = S.a.filter(a => a.id != D.id); save(); return render(); }
   if (A == "asgCopyLink") {
     const url = `${window.location.origin}/lam-bai/${D.code}`;
-    try {
-      if (navigator.clipboard) navigator.clipboard.writeText(url);
-    } catch(e) {}
+    copyText(url);
     toast("Đã sao chép link làm bài: " + url);
     return;
   }
   if (A == "asgOpenLink") {
-    window.open(`/lam-bai/${D.code}`, "_blank");
+    const targetUrl = `/lam-bai/${D.code}`;
+    try {
+      const win = window.open(targetUrl, "_blank");
+      if (!win || win.closed || typeof win.closed === "undefined") {
+        window.location.href = targetUrl;
+      }
+    } catch(e) {
+      window.location.href = targetUrl;
+    }
     return;
+  }
+  if (A == "asgPreviewStudent") {
+    history.pushState(null, "", `/lam-bai/${D.code}`);
+    STU = {
+      phase: "entry",
+      code: String(D.code || "").toUpperCase(),
+      name: "",
+      className: "",
+      studentCode: "",
+      info: null,
+      exam: null,
+      ans: [],
+      fl: [],
+      i: 0,
+      startedAt: 0,
+      end: 0,
+      w5: 0,
+      w1: 0,
+      timer: null,
+      result: null
+    };
+    return render();
+  }
+  if (A == "stuReturnTeacher") {
+    history.pushState(null, "", "/");
+    STU = {
+      phase: "entry",
+      code: "",
+      name: "",
+      className: "",
+      studentCode: "",
+      info: null,
+      exam: null,
+      ans: [],
+      fl: [],
+      i: 0,
+      startedAt: 0,
+      end: 0,
+      w5: 0,
+      w1: 0,
+      timer: null,
+      result: null
+    };
+    return go("assign");
   }
   if (A == "asgRefresh") {
     return syncAssignmentSubmissions(D.code, true);
@@ -4697,6 +5364,7 @@ document.addEventListener("change", e => {
     }
     return;
   }
+  if (e.target.dataset.act == "homeChartClass") { HOME_CHART.classFilter = e.target.value; return render(); }
   if (e.target.id == "rep_asg_select") { REP.asgId = e.target.value; return render(); }
   if (e.target.id == "rep_cls_select") { REP.clsId = e.target.value; return render(); }
   if (e.target.id == "vsel") { VW.i = +e.target.value; return render(); }
@@ -4726,6 +5394,8 @@ document.addEventListener("input", e => {
 });
 
 /* Initialize */
+restoreLocalAssignments();
+loadTeacherAssignmentsFromServer();
 render();
 </script>
 </body>
