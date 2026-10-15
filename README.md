@@ -1,37 +1,52 @@
-# B-Lingo – bản triển khai chính thức (web tĩnh)
+# B-Lingo – Trợ lý Giảng dạy & Quản trị Tiếng Anh (Multi-User Cloud & Server-Side AI)
 
-Gồm 3 file:
-- `index.html` – toàn bộ ứng dụng (một file, chạy ngay).
-- `ai-proxy-worker.js` – máy chủ AI mẫu (Cloudflare Worker), giữ khóa API an toàn. Chỉ cần nếu muốn bật chức năng AI.
-- `README.md` – hướng dẫn này.
+B-Lingo là nền tảng quản trị và trợ lý giảng dạy tiếng Anh thông minh dành cho giáo viên THCS/THPT, hỗ trợ nhiều người dùng trên nền tảng Firebase và gọi AI Gemini bảo mật phía máy chủ Node.js Express.
 
-## Cách 1. Dùng ngay không cần cài gì
-Mở `index.html` bằng Chrome/Edge. Các chức năng không dùng AI chạy đầy đủ: quản lý lớp, kho đề, soạn tay, số hóa đề, giao bài, phòng thi thử, xuất Word/Excel.
-Chức năng AI (Tạo đề bằng AI, Luyện nói, nhận xét AI) cần Cách 3.
+## Kiến trúc & Cấu hình AI phía máy chủ
 
-## Cách 2. Đưa lên mạng bằng GitHub Pages (miễn phí)
-1. Đăng ký/đăng nhập github.com → **New repository** → tên ví dụ `b-lingo`, chọn **Public** → Create.
-2. Bấm **uploading an existing file**, kéo `index.html` vào → **Commit changes**.
-3. Vào **Settings → Pages** → mục *Build and deployment*: Source = **Deploy from a branch**, Branch = **main** / **(root)** → Save.
-4. Chờ 1–2 phút. Địa chỉ app: `https://TEN-GITHUB-CUA-BAN.github.io/b-lingo/`
-5. Muốn cập nhật: vào repository, bấm file `index.html` → biểu tượng bút chì (hoặc Upload files) → thay bằng bản mới → Commit.
+### 1. Endpoint AI Server: `POST /api/ai`
+- **Xác thực bảo mật**: Kiểm tra Firebase ID Token trong header `Authorization: Bearer <token>`. Từ chối người dùng chưa đăng nhập (HTTP 401/403).
+- **Giới hạn tần suất (Rate Limiting)**: Tối đa **30 yêu cầu / phút** và **800 yêu cầu / ngày** cho mỗi tài khoản giáo viên. Khi vượt giới hạn trả HTTP 429.
+- **Không để lộ khóa**: Toàn bộ yêu cầu AI được xử lý trên máy chủ. Khóa `GEMINI_API_KEY` nằm hoàn toàn ở môi trường server, không bao giờ gửi xuống client.
+- **Mô hình**: Đọc từ biến `GEMINI_MODEL` (mặc định `gemini-flash-latest`, có thể cấu hình `gemini-3.1-pro-preview`). `maxOutputTokens: 24000`, `temperature: 0.7`.
+- **Định dạng phản hồi**: `{ "text": "...", "truncated": true/false }`.
 
-Phương án khác: Netlify Drop (netlify.com/drop) – kéo thả thư mục chứa `index.html`, có link ngay. Cloudflare Pages cũng tương tự.
+### 2. Thiết lập biến môi trường (Environment Variables)
+Tạo file `.env` tại thư mục gốc của dự án (tham khảo file `.env.example`):
+```env
+# Khóa API Gemini lấy từ https://aistudio.google.com
+GEMINI_API_KEY=your_gemini_api_key_here
 
-## Cách 3. Bật chức năng AI (tùy chọn)
-Không được dán khóa API trực tiếp vào `index.html` vì ai mở trang cũng thấy và dùng trộm. Cần một "máy chủ trung gian" nhỏ giữ khóa:
-1. Lấy khóa API tại console.anthropic.com (có tính phí theo lượng dùng).
-2. Đăng ký cloudflare.com (miễn phí) → **Workers & Pages → Create → Create Worker**, đặt tên `blingo-ai`, bấm **Deploy**, rồi **Edit code**, dán toàn bộ `ai-proxy-worker.js`, **Deploy**.
-3. Worker → **Settings → Variables and Secrets**: thêm Secret `ANTHROPIC_API_KEY` = khóa của bạn; thêm biến `ALLOWED_ORIGIN` = địa chỉ app, ví dụ `https://TEN.github.io` (chỉ trang của bạn được gọi).
-4. Chép địa chỉ Worker (dạng `https://blingo-ai.xxx.workers.dev`), mở `index.html` bằng Notepad, tìm dòng
-   `window.BLINGO_CONFIG=window.BLINGO_CONFIG||{aiEndpoint:""};`
-   sửa thành `{aiEndpoint:"https://blingo-ai.xxx.workers.dev"}` rồi tải lại lên GitHub.
-5. Nên đặt hạn mức chi tiêu trong console.anthropic.com để tránh phát sinh ngoài ý muốn.
+# Mô hình AI tùy chọn (mặc định gemini-flash-latest)
+GEMINI_MODEL=gemini-flash-latest
 
-Lưu ý: máy chủ mẫu này chưa có đăng nhập người dùng. Ai biết địa chỉ trang đều gọi được AI (tốn tiền của bạn). Với số ít người dùng thử thì đặt `ALLOWED_ORIGIN` và hạn mức chi tiêu là đủ; triển khai rộng cần thêm đăng nhập thật (hướng Firebase).
+# Cổng máy chủ (mặc định 3000)
+PORT=3000
+```
 
-## Giới hạn của bản web tĩnh
-- Dữ liệu (lớp, đề, bài giao) lưu **trong trình duyệt của từng người**, không đồng bộ giữa các máy. Đổi máy hoặc xóa dữ liệu trình duyệt sẽ mất → nhắc người dùng xuất Word/Excel để sao lưu.
-- Đăng nhập chỉ để tách dữ liệu trong một trình duyệt, không phải bảo mật thật.
-- Học sinh chưa nộp bài trực tiếp được (dùng file bài thi và mã kết quả). Muốn nộp trực tiếp, lưu dữ liệu nhiều máy và đăng nhập thật cần chuyển sang nền tảng có máy chủ (Firebase).
-- Thư viện đọc/ghi Excel, Word tải từ cdnjs.cloudflare.com và font từ Google Fonts nên cần có mạng.
+## Tính năng chính của B-Lingo
+
+- **Hệ thống Đăng nhập & Đa người dùng**:
+  - Đăng nhập Google (Google Sign-In) hoặc Email/Mật khẩu với tính năng Quên mật khẩu.
+  - Phân vùng dữ liệu độc lập cho từng giáo viên trên Google Cloud Firestore (`users/{uid}/...`).
+  - Firestore Security Rules bảo vệ nghiêm ngặt: chỉ giáo viên sở hữu mới có quyền đọc và ghi dữ liệu của mình.
+- **Tạo đề thi bằng AI (SGK Global Success)**:
+  - Hỗ trợ tạo đề kiểm tra thường xuyên (KTTX – 25 câu), kiểm tra định kì (KTĐK – 32 câu) và đề thi thử tốt nghiệp THPT 40 câu (Format 2025).
+  - Soạn bài đọc ngắn chuẩn SGK và hệ thống câu hỏi phân hóa từ nhận biết đến vận dụng.
+  - Lưu vào Kho đề, làm thử trực tiếp trên phòng thi hoặc giao cho học sinh.
+- **Phòng thi thử THPT Quốc Gia (Format 2025)**:
+  - Chia đôi màn hình (bên trái bài đọc/ngữ liệu, bên phải câu hỏi), thước câu hỏi tiện lợi, đồng hồ đếm ngược, nộp bài và chấm điểm tự động.
+- **Luyện nói với AI (Giám khảo Speaking IELTS)**:
+  - Mô phỏng phòng thi Speaking 3 phần, nhận diện giọng nói qua micro và phát âm bằng giọng AI chuẩn Anh - Anh.
+- **Quản lý lớp học & Xuất nhập Excel/Word**:
+  - Nhập danh sách học sinh từ file Excel `.xlsx`, quản lý bảng điểm, xuất file Word `.docx` và file mẫu học sinh làm bài độc lập.
+
+## Hướng dẫn chạy & Kiểm thử
+
+1. Khởi động server:
+   ```bash
+   node server.js
+   ```
+2. Truy cập ứng dụng tại `http://localhost:3000`.
+3. Đăng nhập tài khoản giáo viên.
+4. Chọn menu **"Tạo đề"**, chọn SGK Global Success (Khối 10, 11 hoặc 12), chọn định dạng **"KTTX – Kiểm tra thường xuyên (25 câu)"** rồi bấm **"Bắt đầu tạo đề bằng AI"**.

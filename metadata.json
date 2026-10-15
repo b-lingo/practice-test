@@ -1,0 +1,7 @@
+{
+  "name": "B-Lingo",
+  "description": "B-Lingo – Công cụ hỗ trợ giáo viên tiếng Anh: tạo đề bằng AI, giao bài, quản lý lớp, phòng thi thử và luyện nói.",
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

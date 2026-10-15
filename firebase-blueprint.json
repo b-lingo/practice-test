@@ -1,0 +1,78 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Dữ liệu người dùng giáo viên bao gồm hồ sơ, các lớp học, đề thi, bài giao, nhiệm vụ và các buổi luyện nói",
+      "type": "object",
+      "properties": {
+        "me": {
+          "type": "string",
+          "description": "Tên hiển thị của giáo viên"
+        },
+        "email": {
+          "type": "string",
+          "description": "Địa chỉ email của giáo viên"
+        },
+        "th": {
+          "type": "string",
+          "description": "Chủ đề giao diện (light hoặc dark)"
+        },
+        "c": {
+          "type": "array",
+          "description": "Danh sách các lớp học và học sinh"
+        },
+        "e": {
+          "type": "array",
+          "description": "Danh sách các đề thi đã lưu"
+        },
+        "a": {
+          "type": "array",
+          "description": "Danh sách bài thi đã giao cho lớp"
+        },
+        "t": {
+          "type": "array",
+          "description": "Danh sách nhiệm vụ và nhắc nhở"
+        },
+        "sp": {
+          "type": "array",
+          "description": "Lịch sử các buổi luyện nói với AI"
+        },
+        "tpp": {
+          "type": "object",
+          "description": "Kế hoạch 10 test cho từng Unit phòng thi thử"
+        }
+      }
+    },
+    "Exam": {
+      "title": "Exam",
+      "description": "Tài liệu đề thi lưu trữ độc lập trong kho đề",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Mã định danh đề thi" },
+        "title": { "type": "string", "description": "Tiêu đề đề thi" },
+        "qs": { "type": "array", "description": "Danh sách các câu hỏi trắc nghiệm kèm đáp án và lời giải" },
+        "g": { "type": "string", "description": "Khối lớp (10, 11, 12)" },
+        "ty": { "type": "string", "description": "Loại đề thi (thpt, kttx, ktdk, luyen, khac)" },
+        "un": { "type": "string", "description": "Số Unit" },
+        "src": { "type": "string", "description": "Nguồn gốc đề thi (ai, scan, kho-de, manual)" },
+        "tp": { "type": "object", "description": "Thông tin bài test trong phòng thi thử {g, u, n}" },
+        "ownerUid": { "type": "string", "description": "UID của giáo viên sở hữu đề thi" },
+        "tries": { "type": "array", "description": "Lịch sử làm bài thử" },
+        "ts": { "type": "number", "description": "Thời gian tạo (timestamp)" },
+        "createdAt": { "type": "number", "description": "Thời điểm tạo" },
+        "updatedAt": { "type": "number", "description": "Thời điểm cập nhật" }
+      },
+      "required": ["id", "title", "qs", "ownerUid"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Dữ liệu riêng tư của từng giáo viên theo UID"
+    },
+    "/exams/{examId}": {
+      "schema": "Exam",
+      "description": "Kho đề thi được phân quyền theo ownerUid"
+    }
+  }
+}

@@ -1,0 +1,42 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 1. MẶC ĐỊNH TỪ CHỐI TẤT CẢ (Default Deny)
+    // Học sinh (chưa đăng nhập, request.auth == null) hoàn toàn KHÔNG được đọc hay ghi trực tiếp vào Firestore.
+    // Mọi tương tác của học sinh (nhận đề, nộp bài) bắt buộc phải đi qua các endpoint máy chủ an toàn:
+    // POST /api/bai/:code/bat-dau và POST /api/bai/:code/nop.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Hàm tiện ích kiểm tra xem người dùng đã đăng nhập và có UID trùng với userId hay không
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    // 2. KHÔNG GIAN DỮ LIỆU RIÊNG CỦA MỖI GIÁO VIÊN: /users/{userId}
+    // Mỗi giáo viên chỉ có quyền đọc (read) và ghi (create, update, delete) dữ liệu của chính mình
+    // bao gồm danh sách lớp, học sinh, kho đề thi, các bài đã giao và toàn bộ bài nộp của học sinh.
+    // Giáo viên tuyệt đối không thể đọc hay can thiệp vào bài giao hoặc bài nộp của giáo viên khác.
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+
+      // Cho phép đọc/ghi đối với các sub-collections bên dưới tài liệu của giáo viên đó (nếu có)
+      match /{subCollection=**} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+
+    // 3. COLLECTION KHO ĐỀ THI: /exams/{examId}
+    // Chỉ chủ sở hữu (giáo viên có ownerUid trùng với request.auth.uid) mới được phép đọc và ghi đề thi.
+    // Học sinh (chưa đăng nhập hoặc không phải chủ sở hữu) hoàn toàn KHÔNG có quyền đọc/ghi document đề thi từ Firestore,
+    // đảm bảo học sinh không bao giờ đọc được trường đáp án (a) hay lời giải (ex).
+    match /exams/{examId} {
+      allow create: if request.auth != null && request.resource.data.ownerUid == request.auth.uid;
+      allow read, delete: if request.auth != null && resource.data.ownerUid == request.auth.uid;
+      allow update: if request.auth != null && resource.data.ownerUid == request.auth.uid && request.resource.data.ownerUid == request.auth.uid;
+    }
+  }
+}
+
