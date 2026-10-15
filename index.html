@@ -119,12 +119,12 @@ window.claude={use:async function(n){
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const fm=s=>esc(s).replace(/\*\*([\s\S]+?)\*\*/g,"<b>$1</b>").replace(/&lt;u&gt;([\s\S]+?)&lt;\/u&gt;/g,"<u>$1</u>");
 const S0=()=>({me:"thầy/cô",c:[],e:[],a:[],t:[],th:""});
-let S=S0(),KEY="edm",ME=null,AUM="in",AUE="",AUOK="",AUFAIL=0,AUWAIT=0,AUDEL=0;
+let S=S0(),KEY="edm",ME=null,AUM="in",AUE="",AUOK="",AUFAIL=0,AUWAIT=0,AUDEL=0,SHL=0;
 let AUTH={u:[],s:""};
 try{const a=JSON.parse(localStorage.getItem("edm_auth")||"{}");if(Array.isArray(a.u))AUTH={u:a.u,s:a.s||""}}catch(e){}
 const saveAuth=()=>{try{localStorage.setItem("edm_auth",JSON.stringify(AUTH))}catch(e){}};
 const save=()=>{if(!ME)return;try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
-function loadUser(u){ME=u;KEY=u.k;S=S0();try{Object.assign(S,JSON.parse(localStorage.getItem(KEY)||"{}"))}catch(e){}if(!S.me||S.me=="thầy/cô")S.me=u.name;}
+function loadUser(u){ME=u;KEY=u.k;S=S0();try{Object.assign(S,JSON.parse(localStorage.getItem(KEY)||"{}"))}catch(e){}if(!S.me||S.me=="thầy/cô")S.me=u.name;SHL=0;loadShared()}
 {const u=AUTH.u.find(x=>x.id==AUTH.s);if(u)loadUser(u)}
 const b64=a=>btoa(String.fromCharCode(...new Uint8Array(a))),unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
 async function hashPw(pw,salt){const k=await crypto.subtle.importKey("raw",new TextEncoder().encode(pw),"PBKDF2",false,["deriveBits"]);return b64(await crypto.subtle.deriveBits({name:"PBKDF2",salt,iterations:150000,hash:"SHA-256"},k,256))}
@@ -260,8 +260,10 @@ thpt(){
  <div class="row" style="gap:6px;margin-bottom:12px">${tabs}</div>${banner}
  <div class="tpw"><div><div class="mute small" style="margin:0 0 8px">Chọn Unit</div>${side}</div>
  <div><div class="card"><div class="row sb"><div><h2 style="margin:0">Unit ${u} · ${esc(U[u-1][0])}</h2><div class="mute small">Khối ${g} · ${esc(U[u-1][1])} · ${10-miss.length}/10 test đã tạo · mỗi test là đề 40 câu (50 phút), nội dung khác nhau</div></div><button class="btn" data-act="tpAll" ${busy||!miss.length?"disabled":""}>${miss.length?`Tạo ${miss.length} test còn thiếu`:"Đã đủ 10 test"}</button></div>
+ <div class="row" style="margin-top:10px;gap:8px"><button class="btn o s" data-act="tpPub" data-s="u" ${10-miss.length?"":"disabled"}>Xuất trang cho học sinh: Unit này</button><button class="btn o s" data-act="tpPub" data-s="g" ${totG(g)?"":"disabled"}>Xuất trang cho học sinh: cả Khối ${g}</button></div>
  <p class="mute small" style="margin:8px 0 0">AI lập kế hoạch 10 chủ đề, bài đọc, từ vựng và ngữ pháp khác nhau cho unit rồi mới soạn từng test, nên các test không trùng nhau. Nếu bị giới hạn lượt gọi (gói Gemini miễn phí), app tự chờ; nên tạo vài test mỗi lần.</p></div>
  <div class="tpg">${[...Array(10)].map((_,n)=>card(n+1)).join("")}</div></div></div>
+ <details class="card" style="margin-top:14px"><summary><b>Cho học sinh vào làm bài thế nào?</b></summary><ol class="small mute" style="padding-left:18px;margin:8px 0 0"><li>Bấm <b>Xuất trang cho học sinh</b> (một Unit hoặc cả Khối). App tải về một file HTML chứa các Test đã tạo.</li><li>Gửi file này cho học sinh (Zalo, email, Google Classroom) để mở trên máy, hoặc đăng lên GitHub để có link chung: vào kho <b>b-lingo</b> → Add file → Upload files → kéo file vào → Commit. Link sẽ là <b>…github.io/b-lingo/tên-file.html</b> (chờ 1–2 phút).</li><li>Học sinh mở link, chọn Test, làm bài, xem điểm và lời giải ngay. Điểm lưu trên máy học sinh, giáo viên chưa nhận tự động.</li><li>Đáp án nằm trong file nên chỉ dùng cho <b>luyện tập</b>, không dùng cho kiểm tra có điểm. Muốn giao bài có hạn nộp, dùng <b>Giao bài cho lớp</b>.</li></ol></details>
  ${oth.length?`<details class="card" style="margin-top:14px"><summary><b>Đề THPT khác trong Kho đề</b> <span class="mute small">${oth.length} đề không thuộc Unit nào</span></summary>${oth.map(e=>`<div class="row sb" style="padding:8px 0;border-top:1px solid var(--line)"><span>${esc(e.title)} <span class="mute small">· ${e.qs.length} câu</span></span><button class="btn s" data-act="thptExam" data-id="${e.id}">Vào thi</button></div>`).join("")}</details>`:""}`},
 tutor(){return spV()},
 video(){return na("Studio Video","Tạo video bài giảng bằng AI cần dịch vụ bên ngoài và máy chủ. Bản này chưa hỗ trợ.")},
@@ -581,10 +583,11 @@ function wPlan(f){const T=[],M=f.mods.map(m=>{const o={...m,tx:[]};if(m.k=="cloz
 const wCtx=()=>`Sách giáo khoa: ${BOOKS[W.book]} tiếng Anh lớp ${W.grade}. Nội dung: ${wUnit()}. Đối tượng: học sinh ${+W.grade<10?"THCS":"THPT"} Việt Nam, mức độ phù hợp lớp ${W.grade} (CEFR ${{6:"A1",7:"A1–A2",8:"A2",9:"A2",10:"A2–B1",11:"B1"}[W.grade]||"B1–B2"}). Bám chủ đề và từ vựng của unit nhưng viết nội dung ORIGINAL, không chép nguyên văn sách.${+W.grade<10?" Dùng câu ngắn, từ vựng đơn giản, phù hợp lứa tuổi 11–15.":""}`;
 const sleepC=async ms=>{for(let t=0;t<ms;t+=500){if(W.cancel)throw{code:"cancel"};await new Promise(r=>setTimeout(r,500))}};
 async function wCall(p,check){
- let last,lt="",rl=0;for(let k=0;k<2;k++){
+ let last,lt="",rl=0,sv=0;for(let k=0;k<2;k++){
   if(W.cancel)throw{code:"cancel"};
   try{const r=await AI(p+(k?"\n\n(Lần trước kết quả chưa hợp lệ. Hãy làm đúng định dạng JSON yêu cầu, ngắn gọn.)":""),{modelTier:"default",cache:false});lt=r.text||"";if(r.truncated)throw{code:"long"};const j=pj(r.text);const v=check(j);if(!v)throw{code:"bad"};return v}
   catch(x){last=(x&&typeof x=="object")?x:{code:"bad"};if(!last.detail&&lt&&!last.status)last.detail=lt.slice(0,140).replace(/\s+/g," ");if(x&&x.code=="rate_limited"&&rl<4){rl++;k--;try{toast("Gemini đang giới hạn lượt gọi, tự chờ "+(rl*20)+" giây rồi thử lại ("+rl+"/4)...",rl*20000)}catch(e){}await sleepC(rl*20000);continue}
+  if(x&&x.code=="error"&&[500,502,503,504].indexOf(x.status)>-1&&sv<5){sv++;k--;try{toast("Máy chủ Gemini đang quá tải (tạm thời), tự chờ "+(sv*15)+" giây rồi thử lại ("+sv+"/5)...",sv*15000)}catch(e){}await sleepC(sv*15000);continue}
   if(x&&(x.code=="not_granted"||x.code=="rate_limited"||x.code=="cancel"))throw x}
  }throw last||{code:"bad"}
 }
@@ -894,6 +897,25 @@ Chỉ trả về JSON: {"texts":[{"id":"t0","title":"...","text":"..."}]}`,j=>{c
  catch(x){TG.err=x&&x.code=="cancel"?"Đã dừng tạo đề. Phần đã xong được giữ lại.":(x&&(x.code=="not_granted"||x.code=="rate_limited")?aiErr(x):"AI trả kết quả chưa hợp lệ sau 2 lần thử."+aiWhy(x))+" Phần đã tạo xong được giữ lại, bấm lại để tạo tiếp."}
  TG.run=null;tpr();return ok}
 async function tpAll(g,u){if(!AI)return toast(AIOFF());for(let n=1;n<=10;n++){if(S.e.some(e=>e.tp&&e.tp.g==g&&e.tp.u==u&&e.tp.n==n))continue;if(!(await tpGen(g,u,n)))break}}
+/* ===== Trang Phòng thi thử cho học sinh (file HTML độc lập) ===== */
+function stpHtml(pk){let t=STU;
+ const R=[['const D=__DATA__;','const PK=__DATA__;let D=PK.tests[0];'],
+ ['const K=D.k?atob(D.k).split(""):null,SET=D.set,N=D.qs.length;','let K,SET,N;'],
+ ['const P="edmp:"+D.code,LK="edml:"+D.code;','let P,LK;'],
+ ['let V="intro",T=null,R=null,TI=null,msg="",F={n:"",c:SET.cls||""},onlyBad=false;','let V="menu",T=null,R=null,TI=null,msg="",F={n:"",c:""},onlyBad=false;\nfunction pick(i){D=PK.tests[i];K=D.k?atob(D.k).split(""):null;SET=D.set;N=D.qs.length;P="edmp:"+D.code;LK="edml:"+D.code;V="intro";msg="";F.c=F.c||"";render()}\nfunction menuH(){const G={};PK.tests.forEach((x,i)=>{(G[x.grp]=G[x.grp]||[]).push([x,i])});return `<div class="card"><h1>${esc(PK.title)}</h1><div class="mute">Chọn một Test để vào phòng thi. Mỗi đề 40 câu, 50 phút, có đồng hồ đếm ngược. Làm xong bạn xem được điểm, đáp án và lời giải ngay.</div></div>`+Object.keys(G).map(g=>`<div class="card"><h2>${esc(g)}</h2><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px">${G[g].map(([x,i])=>{const b=LS.get("edmbest:"+x.code);return `<div style="border:1px solid var(--line);border-radius:12px;padding:12px"><b>${esc(x.title)}</b><div class="mute small" style="margin:4px 0 8px">${x.qs.length} câu${b?` · đã làm ${b.n} lần · cao nhất ${b.b}/10`:" · chưa làm"}</div><button class="btn s" data-pk="${i}">Vào thi</button></div>`}).join("")}</div></div>`).join("")}\nfunction wireMenu(){document.querySelectorAll("[data-pk]").forEach(b=>b.onclick=()=>pick(+b.dataset.pk))}'],
+ ['function render(){$("app").innerHTML=V=="intro"?intro():V=="take"?take():done();','function render(){$("app").innerHTML=V=="menu"?menuH():(V!="take"?\'<div style="margin-bottom:10px"><button class="btn o s" id="tomenu">← Danh sách Test</button></div>\':"")+(V=="intro"?intro():V=="take"?take():done());if(V=="menu")wireMenu();const tm=$("tomenu");if(tm)tm.onclick=()=>{V="menu";R=null;T=null;render()};'],
+ ['T=null;V="done";render()}','if(K){const bk="edmbest:"+D.code,pv=LS.get(bk)||{n:0,b:0};LS.set(bk,{n:pv.n+1,b:Math.max(pv.b,Math.round(cor/N*SET.scale*10)/10)})}T=null;V="done";render()}'],
+ ['const n=F.n.trim().replace(/\\s+/g," "),c=(F.c||"").trim();','const n=F.n.trim().replace(/\\s+/g," ")||"Học sinh",c=(F.c||"").trim()||"-";'],
+ ['Gửi mã kết quả này cho giáo viên','Mã kết quả (chỉ cần gửi nếu giáo viên yêu cầu)'],
+ ['Giáo viên chỉ nhận được bài của bạn khi bạn gửi mã này (qua Zalo, email hoặc cách giáo viên yêu cầu).','Điểm của bạn đã hiện ở trên. Mã này chỉ dùng khi giáo viên muốn ghi nhận kết quả.'],
+ ['<title>B-Lingo – Bài thi tiếng Anh</title>','<title>'+"'+esc(pk.title)+'"+'</title>']];
+ for(const [a,b] of R){if(!t.includes(a))throw new Error("STU đã đổi, không tạo được trang học sinh: "+a.slice(0,40));t=t.split(a).join(b.replace("'+esc(pk.title)+'",esc(pk.title)))}
+ return t.replace("const PK=__DATA__;",()=>"const PK="+JSON.stringify(pk).replace(/</g,"\\u003c")+";")}
+async function tpPub(scope){if(!DL)return toast("Trình duyệt chưa cho tải file từ trang.");const g=TP.g,u=+TP.u;
+ const L=S.e.filter(e=>e.tp&&e.tp.g==g&&(scope=="g"||e.tp.u==u)).sort((a,b)=>a.tp.u-b.tp.u||a.tp.n-b.tp.n);if(!L.length)return toast("Chưa có test nào để xuất.");
+ const tests=L.map(e=>({code:e.id,title:"Test "+e.tp.n,grp:`Unit ${e.tp.u} – ${GSU[g][e.tp.u-1][0]}`,qs:e.qs.map(q=>({p:q.p||"",q:q.q,o:q.o,ex:q.ex||""})),k:btoa(e.qs.map(q=>"ABCD"[q.a]).join("")),set:{min:e.qs.length==40?50:Math.max(5,Math.round(e.qs.length*1.25)),open:"",close:"",tries:0,scale:10,pass:50,cls:"",show:"yes"}}));
+ const pk={v:2,practice:1,title:scope=="g"?`Phòng thi thử tiếng Anh THPT – Lớp ${g}`:`Phòng thi thử tiếng Anh – Lớp ${g} – Unit ${u}: ${GSU[g][u-1][0]}`,tests};
+ try{const fn=scope=="g"?`thi-thu-lop-${g}.html`:`thi-thu-lop-${g}-unit-${u}.html`;await DL.save({filename:fn,data:stpHtml(pk)});toast(`Đã lưu trang cho học sinh (${tests.length} test).`)}catch(x){if(!x||x.code!="declined")toast("Không tạo được trang: "+(x&&x.message?x.message:"hãy thử lại."))}}
 /* ===== Kho đề ===== */
 const TYL={thpt:"Thi THPT",ktdk:"KTĐK",kttx:"KTTX",luyen:"Luyện tập",khac:"Khác"},TYC={thpt:"#1f5bff",ktdk:"#7c3aed",kttx:"#0d9488",luyen:"#d97706",khac:"#64748b"};
 let BK={q:"",g:"",ty:"",src:"",sort:"new",grp:true,det:null,dt:null,menu:null,del:null};
@@ -913,12 +935,18 @@ function bkList(){const L=bkRows();if(!L.length)return `<div class="card empty">
  const head=`<div class="mute small" style="margin:4px 0 8px">Hiển thị ${L.length} / ${S.e.length} đề${BK.q||BK.g||BK.ty||BK.src?` · <button class="lnk" style="font-size:.85rem;font-weight:600;color:var(--pri)" data-act="bkClear">Xóa bộ lọc</button>`:""}</div>`;
  if(!BK.grp)return head+L.map(bkCard).join("");
  const order=["12","11","10","9","8","7","6",""];return head+order.map(g=>{const X=L.filter(x=>x.m.g==g);return X.length?`<details open class="bkg"><summary><b>${g?"Khối "+g+" · "+exLevel(g):"Chưa phân loại"}</b> <span class="mute small">${X.length} đề</span></summary>${X.map(bkCard).join("")}</details>`:""}).join("")}
+const bkPack=()=>JSON.stringify({blingo:"kho-de",v:1,at:Date.now(),exams:S.e,tpp:S.tpp||{}});
+async function bkExport(){if(!DL)return toast("Trình duyệt chưa cho tải file từ trang.");if(!S.e.length)return toast("Kho đề đang trống, chưa có gì để xuất.");try{await DL.save({filename:"kho-de.json",data:bkPack()});toast("Đã lưu file kho-de.json ("+S.e.length+" đề).",8000)}catch(x){if(!x||x.code!="declined")toast("Không lưu được file, hãy thử lại.")}}
+function bkMerge(j,auto){if(!j||j.blingo!="kho-de"||!Array.isArray(j.exams))return -1;S.sh=S.sh||[];let n=0;j.exams.forEach(e=>{if(!e||!e.id||!Array.isArray(e.qs))return;if(auto){if(S.sh.indexOf(e.id)>-1)return;S.sh.push(e.id)}if(S.e.some(x=>x.id==e.id))return;S.e.push(e);n++});if(j.tpp&&typeof j.tpp=="object"){S.tpp=S.tpp||{};Object.keys(j.tpp).forEach(k=>{if(!S.tpp[k])S.tpp[k]=j.tpp[k]})}save();return n}
+async function bkImport(){const f=($("bkfile")||{}).files&&$("bkfile").files[0];if(!f)return toast("Hãy chọn file kho-de.json trước.");if(f.size>20971520)return toast("File lớn hơn 20 MB.");try{const n=bkMerge(JSON.parse(await f.text()),false);if(n<0)return toast("File này không phải kho đề của B-Lingo.");toast(n?"Đã thêm "+n+" đề vào kho.":"Không có đề mới, các đề trong file đã có sẵn.",8000);render()}catch(x){toast("Không đọc được file, hãy chọn đúng file kho-de.json.")}}
+async function loadShared(){if(!ME||SHL)return;SHL=1;if(!/^https?:/.test(location.protocol))return;try{const r=await fetch("kho-de.json",{cache:"no-store"});if(!r.ok)return;const n=bkMerge(await r.json(),true);if(n>0){try{toast("Đã nạp "+n+" đề dùng chung vào Kho đề.",8000)}catch(e){}render()}}catch(e){}}
+const bkShareH=()=>`<details class="card"><summary><b>Sao lưu &amp; chia sẻ kho đề</b></summary><p class="mute small" style="margin:8px 0">Dữ liệu của B-Lingo lưu trong trình duyệt nên có thể mất khi đổi máy hoặc xóa dữ liệu. Bấm <b>Xuất</b> để tải file <b>kho-de.json</b> làm bản sao lưu. Nếu tải file này lên GitHub cùng thư mục với trang (tên giữ nguyên <b>kho-de.json</b>), mọi máy mở trang sẽ tự có các đề đó.</p><div class="row"><button class="btn o" data-act="bkExp">Xuất kho đề (.json)</button></div><div class="row" style="margin-top:10px"><input id="bkfile" type="file" accept=".json,application/json" aria-label="Chọn file kho đề"><button class="btn o" data-act="bkImp">Nhập kho đề</button></div></details>`;
 function bankV(){
  if(BK.det&&ex(BK.det))return bkDetail(ex(BK.det));BK.det=null;
- if(!S.e.length)return `<div class="row sb"><h1>Kho đề đã lưu</h1><button class="btn" data-go="create">+ Tạo đề</button></div><div class="card empty">Kho đề đang trống.<br><br><button class="btn" data-go="create">Tạo đề đầu tiên</button></div>`;
+ if(!S.e.length)return `<div class="row sb"><h1>Kho đề đã lưu</h1><button class="btn" data-go="create">+ Tạo đề</button></div><div class="card empty">Kho đề đang trống.<br><br><button class="btn" data-go="create">Tạo đề đầu tiên</button></div>${bkShareH()}`;
  const M=S.e.map(exMeta),cg={},ct={};M.forEach(m=>{cg[m.g||"none"]=(cg[m.g||"none"]||0)+1;ct[m.ty]=(ct[m.ty]||0)+1});
  const chip=(k,v,l,n)=>`<button class="fc" data-act="bkF" data-k="${k}" data-v="${v}" aria-pressed="${BK[k]==v}">${l}${n!=null?` <span class="mute">${n}</span>`:""}</button>`;
- return `<div class="row sb"><h1>Kho đề đã lưu</h1><button class="btn" data-go="create">+ Tạo đề</button></div>
+ return `<div class="row sb"><h1>Kho đề đã lưu</h1><button class="btn" data-go="create">+ Tạo đề</button></div>${bkShareH()}
  <div class="card"><div class="row"><input id="bk_q" type="search" data-bk="q" value="${esc(BK.q)}" placeholder="Tìm theo tên đề hoặc Unit..." aria-label="Tìm đề" style="flex:2;min-width:180px"><select data-bk="src" aria-label="Nguồn đề" style="flex:1;min-width:130px">${[["","Mọi nguồn"],["ai","AI tạo"],["scan","Số hóa từ file"],["teacher","Tự soạn"]].map(([k,l])=>`<option value="${k}" ${BK.src==k?"selected":""}>${l}</option>`).join("")}</select><select data-bk="sort" aria-label="Sắp xếp" style="flex:1;min-width:130px">${[["new","Mới nhất"],["old","Cũ nhất"],["name","Tên A–Z"],["qs","Nhiều câu nhất"]].map(([k,l])=>`<option value="${k}" ${BK.sort==k?"selected":""}>${l}</option>`).join("")}</select></div>
  <div class="row" style="gap:6px;margin-top:10px"><span class="small mute" style="min-width:56px">Khối</span>${chip("g","","Tất cả",S.e.length)}${["12","11","10","9","8","7","6"].filter(g=>cg[g]).map(g=>chip("g",g,"Khối "+g,cg[g])).join("")}${cg.none?chip("g","none","Chưa phân loại",cg.none):""}</div>
  <div class="row" style="gap:6px;margin-top:8px"><span class="small mute" style="min-width:56px">Loại đề</span>${chip("ty","","Tất cả")}${Object.keys(TYL).filter(k=>ct[k]).map(k=>chip("ty",k,TYL[k],ct[k])).join("")}</div>
@@ -1173,6 +1201,9 @@ document.addEventListener("click",e=>{
  if(A=="tpStop"){W.cancel=1;return toast("Sẽ dừng sau bước hiện tại...")}
  if(A=="tpMake"){if(TG.run)return;if(!AI)return toast(AIOFF());tpGen(TP.g,+TP.u,+D.n);return}
  if(A=="tpRe"){if(TG.run)return;const k=TP.g+"-"+TP.u+"-"+D.n;if(TP.cf!=k){TP.cf=k;return render()}TP.cf="";if(!AI)return toast(AIOFF());tpGen(TP.g,+TP.u,+D.n);return}
+ if(A=="bkExp"){bkExport();return}
+ if(A=="bkImp"){bkImport();return}
+ if(A=="tpPub"){tpPub(D.s);return}
  if(A=="tpAll"){if(TG.run)return;tpAll(TP.g,+TP.u);return}
  if(A=="thptRnd"){const all=S.e.map(e=>({e,m:exMeta(e)})).filter(x=>x.m.ty=="thpt"||x.e.qs.length==40).filter(x=>x.e.qs.length);if(!all.length)return toast("Chưa có đề THPT nào để chọn.");const e=all[Math.floor(Math.random()*all.length)].e;TKP={qs:e.qs,t:e.title,back:"thpt",min:e.qs.length==40?50:0,eid:e.id};return go("takeStart")}
  if(A=="thptExam"){const e=D.id=="__new"?{title:W.title||"Đề vừa tạo",qs:W.exam&&W.exam.qs||[]}:ex(D.id);if(!e||!e.qs.length)return toast("Không tìm thấy đề.");TKP={qs:e.qs,t:e.title,back:"thpt",min:e.qs.length==40?50:0,eid:D.id=='__new'?null:e.id};return go("takeStart")}
